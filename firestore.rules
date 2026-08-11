@@ -1,0 +1,89 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isProjectOwner(project) {
+      return isAuthenticated() && project.ownerId == request.auth.uid;
+    }
+
+    function isProjectMember(project) {
+      return isAuthenticated()
+        && (project.ownerId == request.auth.uid
+          || ('memberIds' in project
+            && project.memberIds is list
+            && request.auth.uid in project.memberIds));
+    }
+
+    function validMembership(project) {
+      return project.memberIds is list && project.ownerId in project.memberIds;
+    }
+
+    function validOwnerUpdate(before, after) {
+      return after.ownerId == before.ownerId
+        && (('memberIds' in after && validMembership(after))
+          || (!('memberIds' in before) && !('memberIds' in after)));
+    }
+
+    function canAccessProject(projectId) {
+      return isAuthenticated()
+        && exists(/databases/$(database)/documents/projects/$(projectId))
+        && isProjectMember(get(/databases/$(database)/documents/projects/$(projectId)).data);
+    }
+
+    match /users/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+
+      // Retained for backward compatibility with recovered user-scoped records.
+      match /projects/{projectId} {
+        allow read, create, update, delete: if isAuthenticated() && request.auth.uid == userId;
+
+        match /logs/{logId} {
+          allow read, write: if isAuthenticated() && request.auth.uid == userId;
+        }
+      }
+    }
+
+    match /userStats/{userId} {
+      allow read, write: if isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /projects/{projectId} {
+      allow create: if isAuthenticated()
+        && request.resource.data.ownerId == request.auth.uid
+        && validMembership(request.resource.data);
+
+      allow read: if isProjectMember(resource.data);
+
+      allow update: if request.resource.data.ownerId == resource.data.ownerId
+        && (
+          (isProjectOwner(resource.data) && validOwnerUpdate(resource.data, request.resource.data))
+          || (isProjectMember(resource.data)
+            && !request.resource.data.diff(resource.data).affectedKeys()
+              .hasAny(['ownerId', 'memberIds', 'teamMembers', 'pendingInvites']))
+        );
+
+      allow delete: if isProjectOwner(resource.data);
+    }
+
+    match /tasks/{taskId} {
+      allow create: if isAuthenticated()
+        && request.resource.data.projectId is string
+        && request.resource.data.reporterId == request.auth.uid
+        && canAccessProject(request.resource.data.projectId);
+
+      allow read: if resource.data.projectId is string
+        && canAccessProject(resource.data.projectId);
+
+      allow update: if resource.data.projectId is string
+        && request.resource.data.projectId == resource.data.projectId
+        && request.resource.data.reporterId == resource.data.reporterId
+        && canAccessProject(resource.data.projectId);
+
+      allow delete: if resource.data.projectId is string
+        && canAccessProject(resource.data.projectId);
+    }
+  }
+}

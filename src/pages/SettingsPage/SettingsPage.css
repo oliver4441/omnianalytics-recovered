@@ -1,0 +1,39 @@
+.settings-page { width: min(100%, 980px); min-height: 100%; margin: 0 auto; padding: 28px 30px 50px; }
+.settings-page__heading { margin-bottom: 25px; }
+.settings-page__heading > span { display: block; margin-bottom: 6px; color: var(--oa-brand-600); font-size: 9px; font-weight: 720; letter-spacing: .08em; text-transform: uppercase; }
+.settings-page__heading h1 { color: var(--oa-text); font-size: 28px; font-weight: 720; letter-spacing: -.04em; }
+.settings-page__heading p { margin-top: 7px; color: var(--oa-text-secondary); font-size: var(--oa-text-sm); }
+.settings-page__alert { min-height: 44px; display: flex; align-items: center; gap: 8px; margin-bottom: 18px; padding: 10px 12px; border-radius: 8px; background: var(--oa-danger-50); color: var(--oa-danger-700); font-size: var(--oa-text-sm); }
+.settings-page__layout { display: grid; gap: 14px; }
+.settings-card { display: grid; grid-template-columns: 40px minmax(0, 1fr); gap: 15px; padding: 20px 21px; border: 1px solid var(--oa-border); border-radius: var(--oa-radius-lg); background: var(--oa-surface); box-shadow: var(--oa-shadow-xs); }
+.settings-card__icon { width: 38px; height: 38px; display: grid; place-items: center; border-radius: 10px; background: var(--oa-brand-50); color: var(--oa-brand-600); }
+.settings-card__body h2 { color: var(--oa-text); font-size: 14px; font-weight: 680; }
+.settings-card__body > p,
+.settings-card__body--action > div p { margin-top: 4px; color: var(--oa-text-secondary); font-size: 10px; line-height: 1.5; }
+.settings-theme { width: fit-content; display: grid; grid-template-columns: repeat(2, 1fr); gap: 3px; margin-top: 15px; padding: 3px; border-radius: 8px; background: var(--oa-bg); }
+.settings-theme button { min-width: 90px; min-height: 34px; display: flex; align-items: center; justify-content: center; gap: 6px; border-radius: 6px; background: transparent; color: var(--oa-text-secondary); font-size: 10px; font-weight: 640; }
+.settings-theme button.is-active { background: var(--oa-surface); box-shadow: var(--oa-shadow-xs); color: var(--oa-brand-700); }
+.settings-account { max-width: 650px; display: grid; grid-template-columns: 1fr 1fr; margin-top: 15px; border: 1px solid var(--oa-border); border-radius: 8px; }
+.settings-account div { min-width: 0; padding: 11px 12px; }
+.settings-account div + div { border-left: 1px solid var(--oa-border); }
+.settings-account dt { color: var(--oa-text-muted); font-size: 8px; font-weight: 680; text-transform: uppercase; }
+.settings-account dd { overflow: hidden; margin-top: 4px; color: var(--oa-text); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.settings-card__link { display: flex; align-items: center; gap: 5px; margin-top: 11px; padding: 4px 0; background: transparent; color: var(--oa-brand-600); font-size: 10px; font-weight: 660; }
+.settings-card__body--action { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
+.settings-signout { min-height: 38px; display: flex; flex: 0 0 auto; align-items: center; gap: 7px; padding: 0 13px; border: 1px solid color-mix(in srgb, var(--oa-danger-500) 38%, var(--oa-border)); border-radius: 8px; background: var(--oa-surface); color: var(--oa-danger-700); font-size: 10px; font-weight: 660; }
+.settings-signout:disabled { cursor: wait; opacity: .6; }
+[data-theme='dark'] .settings-card__icon { background: rgba(99, 91, 255, .11); }
+[data-theme='dark'] .settings-page__alert { background: rgba(229, 72, 77, .1); color: #ff9ca1; }
+@media (min-width: 1440px) { .settings-page { padding: 34px 42px 55px; } }
+@media (max-width: 1023px) { .settings-page { padding: 25px 24px 45px; } }
+@media (max-width: 639px) {
+  .settings-page { padding: 20px 16px calc(90px + env(safe-area-inset-bottom)); }
+  .settings-page__heading h1 { font-size: 25px; }
+  .settings-card { grid-template-columns: 1fr; padding: 18px 16px; }
+  .settings-theme { width: 100%; }
+  .settings-theme button { min-height: 41px; }
+  .settings-account { grid-template-columns: 1fr; }
+  .settings-account div + div { border-top: 1px solid var(--oa-border); border-left: 0; }
+  .settings-card__body--action { align-items: stretch; flex-direction: column; }
+  .settings-signout { min-height: 44px; justify-content: center; }
+}

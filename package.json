@@ -1,0 +1,61 @@
+{
+  "name": "omnianalytics",
+  "version": "1.0.0",
+  "description": "Unified engineering operations workspace with offline support",
+  "type": "module",
+  "main": "electron/main.cjs",
+  "scripts": {
+    "generate:integration-metadata": "node scripts/generate-integration-metadata.mjs",
+    "predev": "npm run generate:integration-metadata",
+    "dev": "vite",
+    "prebuild": "npm run generate:integration-metadata",
+    "build": "vite build",
+    "preview": "vite preview",
+    "lint": "eslint src --ext js,jsx --report-unused-disable-directives --max-warnings 0",
+    "test:integrations": "node --test tests/integration-service.test.mjs",
+    "test:e2e": "playwright test",
+    "format": "prettier --write src/",
+    "electron:dev": "vite build && electron .",
+    "electron:build:win": "vite build && electron-builder --win --config electron-builder.json",
+    "electron:build:linux": "vite build && electron-builder --linux --config electron-builder.json",
+    "electron:build:mac": "vite build && electron-builder --mac --config electron-builder.json",
+    "electron:build:all": "vite build && electron-builder --win --linux --mac --config electron-builder.json"
+  },
+  "keywords": [
+    "engineering-operations",
+    "developer-productivity",
+    "project-management",
+    "firebase",
+    "react",
+    "redux",
+    "pwa",
+    "offline"
+  ],
+  "author": "gideon254-ux",
+  "license": "MIT",
+  "dependencies": {
+    "@reduxjs/toolkit": "^1.9.7",
+    "chart.js": "^4.5.1",
+    "firebase": "^10.7.0",
+    "react": "^18.2.0",
+    "react-dnd": "^16.0.1",
+    "react-dnd-html5-backend": "^16.0.1",
+    "react-dom": "^18.2.0",
+    "react-redux": "^8.1.3",
+    "react-router-dom": "^6.20.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "1.62.1",
+    "@types/react": "^18.2.0",
+    "@types/react-dom": "^18.2.0",
+    "@vitejs/plugin-react": "^4.2.0",
+    "electron": "^33.2.1",
+    "electron-builder": "^25.1.8",
+    "eslint": "^8.57.0",
+    "eslint-plugin-react": "^7.33.0",
+    "eslint-plugin-react-hooks": "^4.6.0",
+    "eslint-plugin-react-refresh": "^0.4.0",
+    "prettier": "^3.1.0",
+    "vite": "^5.0.0"
+  }
+}

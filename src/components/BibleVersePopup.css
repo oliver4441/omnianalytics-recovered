@@ -1,0 +1,70 @@
+.bible-verse-popup {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  max-width: 380px;
+  background: linear-gradient(135deg, #6b5b95 0%, #9b8fc2 100%);
+  border-radius: 16px;
+  padding: 20px 24px;
+  box-shadow: 0 12px 40px rgba(107, 91, 149, 0.4);
+  z-index: 9999;
+  animation: slideIn 0.5s ease-out;
+  color: white;
+}
+
+@keyframes slideIn {
+  from {
+    transform: translateX(100%);
+    opacity: 0;
+  }
+  to {
+    transform: translateX(0);
+    opacity: 1;
+  }
+}
+
+.verse-close-btn {
+  position: absolute;
+  top: 8px;
+  right: 12px;
+  background: none;
+  border: none;
+  color: rgba(255, 255, 255, 0.7);
+  font-size: 24px;
+  cursor: pointer;
+  line-height: 1;
+  padding: 0;
+  transition: color 0.2s;
+}
+
+.verse-close-btn:hover {
+  color: white;
+}
+
+.verse-content {
+  padding-right: 16px;
+}
+
+.verse-text {
+  font-size: 15px;
+  font-style: italic;
+  line-height: 1.6;
+  margin: 0 0 12px 0;
+  font-weight: 500;
+}
+
+.verse-reference {
+  font-size: 13px;
+  margin: 0;
+  font-weight: 600;
+  opacity: 0.9;
+}
+
+@media (max-width: 480px) {
+  .bible-verse-popup {
+    left: 16px;
+    right: 16px;
+    bottom: 16px;
+    max-width: none;
+  }
+}

@@ -1,0 +1,28 @@
+we will be creating a web app and host it on firebase free tier that will be used by developer.students or any other person wrking on any project with the
+wish of working on projects.the appp features will include:
+
+1.graphical tracking for projects 
+
+when the user adds a project on the dashboard the app the user projects by allowing for journals and logging which will be used as raw data for 
+graph creation for the projects.
+
+2. add projects
+
+users will be pressented with a "add project" button on the dashboard where our users will be able to add multiple projects. free tiers will be for
+a max of 5 projects beyond that, the user will be required  to upgrade their subscription
+
+3.free tiers 
+
+the free tiers on the app allow for a max of 5 projects per user for more project user will be required to subscribe.
+
+4.countdown
+ 
+after user creates a proect the user will be prompted to input project period and name .immediately the user presses start the countdown begins.
+
+5.motivations and compliments 
+
+after the time period is done the user fails to keep logs then the graph will not be generated. the user recieves encouragements when this happens.
+whereas when the user keeps inputing and journaling or keeping logs and a good graph works out for the user. the user will recieve badges and one 
+free project space for 6 months . meaning this will encourage user interaction and improve the number of users 
+
+the appp will be created and hosted on firebase free tier 

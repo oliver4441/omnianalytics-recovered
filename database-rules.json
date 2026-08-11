@@ -1,0 +1,563 @@
+// Firebase Security Rules - Phase 4: Enhanced Security and Performance
+{
+  "rulesVersion": "2",
+  "rules": {
+    // Users collection - Enhanced security
+    "users": {
+      // Only authenticated users can create their own user document
+      "$uid": {
+        ".write": "auth != null && auth.uid == $uid",
+        ".read": "auth != null && auth.uid == $uid",
+
+        // User profile data
+        "profile": {
+          ".write": "auth != null && auth.uid == $uid",
+          ".read": "auth != null && auth.uid == $uid",
+
+          // Email can only be set by user or admin
+          "email": {
+            ".write": "auth != null && auth.uid == $uid",
+            ".read": true
+          },
+
+          // Username validation and uniqueness
+          "username": {
+            ".write": "auth != null && auth.uid == $uid",
+            ".read": true,
+            ".validate": "newData.isString() && newData.val().matches(/^[a-zA-Z0-9_]{3,20}$/) && !root.child('usernames/' + newData.val()).exists()"
+          }
+        },
+
+        // Projects subcollection
+        "projects": {
+          ".write": "auth != null && auth.uid == $uid",
+          ".read": "auth != null && auth.uid == $uid",
+
+          // Individual projects
+          "$projectId": {
+            ".write": "auth != null && auth.uid == $uid",
+            ".read": "auth != null && auth.uid == $uid",
+
+            // Project data
+            "name": {
+              ".write": "auth != null && auth.uid == $uid",
+              ".read": true,
+              ".validate": "newData.isString() && newData.val().length <= 100"
+            },
+            "description": {
+              ".write": "auth != null && auth.uid == $uid",
+              ".read": true,
+              ".validate": "newData.isString() && newData.val().length <= 1000"
+            },
+            "status": {
+              ".write": "auth != null && auth.uid == $uid",
+              ".read": true,
+              ".validate": "newData.isString() && newData.val().matches(/^(active|completed|paused|archived)$/)"
+            },
+            "priority": {
+              ".write": "auth != null && auth.uid == $uid",
+              ".read": true,
+              ".validate": "newData.isString() && newData.val().matches(/^(low|medium|high|critical)$/)"
+            },
+            "deadline": {
+              ".write": "auth != null && auth.uid == $uid",
+              ".read": true,
+              ".validate": "newData.isTimestamp()"
+            },
+            "createdAt": {
+              ".write": "auth != null && auth.uid == $uid",
+              ".read": true,
+              ".validate": "newData.isTimestamp()"
+            },
+            "updatedAt": {
+              ".write": "auth != null && auth.uid == $uid",
+              ".read": true,
+              ".validate": "newData.isTimestamp()"
+            },
+
+            // Project settings - can only be modified by project owner
+            "settings": {
+              ".write": "auth != null && auth.uid == $uid",
+              ".read": true,
+
+              "notifications": {
+                ".write": "auth != null && auth.uid == $uid",
+                ".read": true,
+                ".validate": "newData.isBoolean()"
+              },
+              "public": {
+                ".write": "auth != null && auth.uid == $uid",
+                ".read": true,
+                ".validate": "newData.isBoolean()"
+              }
+            },
+
+            // Logs subcollection - Enhanced security
+            "logs": {
+              ".write": "auth != null && auth.uid == $uid",
+              ".read": "auth != null && auth.uid == $uid",
+
+              "$logId": {
+                ".write": "auth != null && auth.uid == $uid",
+                ".read": "auth != null && auth.uid == $uid",
+
+                // Log entry validation
+                "text": {
+                  ".write": "auth != null && auth.uid == $uid",
+                  ".read": true,
+                  ".validate": "newData.isString() && newData.val().length <= 1000"
+                },
+                "type": {
+                  ".write": "auth != null && auth.uid == $uid",
+                  ".read": true,
+                  ".validate": "newData.isString() && newData.val().matches(/^(info|warning|error|progress|milestone)$/)"
+                },
+                "createdAt": {
+                  ".write": "auth != null && auth.uid == $uid",
+                  ".read": true,
+                  ".validate": "newData.isTimestamp()"
+                },
+                "updatedAt": {
+                  ".write": "auth != null && auth.uid == $uid",
+                  ".read": true,
+                  ".validate": "newData.isTimestamp()"
+                },
+
+                // Attachments - Limited write access
+                "attachments": {
+                  ".write": "auth != null && auth.uid == $uid",
+                  ".read": true,
+
+                  "$attachmentId": {
+                    ".write": "auth != null && auth.uid == $uid",
+                    ".read": true,
+                    ".validate": "newData.isString() && newData.val().length <= 500"
+                  }
+                }
+              }
+            },
+
+            // Analytics data - Read-only for user
+            "analytics": {
+              ".write": "false",
+              ".read": "auth != null && auth.uid == $uid",
+
+              // Analytics subcollections
+              "pageViews": {
+                ".write": "false",
+                ".read": "auth != null && auth.uid == $uid"
+              },
+              "userEvents": {
+                ".write": "false",
+                ".read": "auth != null && auth.uid == $uid"
+              },
+              "performance": {
+                ".write": "false",
+                ".read": "auth != null && auth.uid == $uid"
+              }
+            },
+
+            // Collaboration - Enhanced access control
+            "collaborators": {
+              ".write": "auth != null && auth.uid == $uid",
+              ".read": "auth != null && auth.uid == $uid",
+
+              "$collaboratorId": {
+                ".write": "auth != null && auth.uid == $uid",
+                ".read": "auth != null && auth.uid == $uid",
+                ".validate": "newData.isString() && newData.val().matches(/^[a-zA-Z0-9_]{3,20}$/)"
+              }
+            }
+          }
+        },
+
+        // Settings - Enhanced validation
+        "settings": {
+          ".write": "auth != null && auth.uid == $uid",
+          ".read": "auth != null && auth.uid == $uid",
+
+          "theme": {
+            ".write": "auth != null && auth.uid == $uid",
+            ".read": true,
+            ".validate": "newData.isString() && newData.val().matches(/^(light|dark|auto)$/)"
+          },
+          "notifications": {
+            ".write": "auth != null && auth.uid == $uid",
+            ".read": true,
+            ".validate": "newData.isBoolean()"
+          },
+          "timeZone": {
+            ".write": "auth != null && auth.uid == $uid",
+            ".read": true,
+            ".validate": "newData.isString() && newData.val().matches(/^[A-Za-z_\/]{1,50}$/)"
+          },
+          "language": {
+            ".write": "auth != null && auth.uid == $uid",
+            ".read": true,
+            ".validate": "newData.isString() && newData.val().matches(/^[a-z]{2}(-[A-Z]{2})?$/)"
+          }
+        },
+
+        // Activity feed - Read-only for user
+        "activity": {
+          ".write": "false",
+          ".read": "auth != null && auth.uid == $uid",
+
+          "$activityId": {
+            ".write": "false",
+            ".read": "auth != null && auth.uid == $uid",
+            ".validate": "newData.hasChildren(['type', 'timestamp', 'message'])",
+
+            "type": {
+              ".write": "false",
+              ".read": true,
+              ".validate": "newData.isString() && newData.val().matches(/^(project_created|project_updated|log_added|collaborator_added|project_completed|system_notification)$/)"
+            },
+            "timestamp": {
+              ".write": "false",
+              ".read": true,
+              ".validate": "newData.isTimestamp()"
+            },
+            "message": {
+              ".write": "false",
+              ".read": true,
+              ".validate": "newData.isString() && newData.val().length <= 200"
+            },
+            "data": {
+              ".write": "false",
+              ".read": true
+            }
+          }
+        },
+
+        // Shared resources - Enhanced access control
+        "shared": {
+          ".write": "auth != null && auth.uid == $uid",
+          ".read": "auth != null && auth.uid == $uid",
+
+          "templates": {
+            ".write": "auth != null && auth.uid == $uid",
+            ".read": "auth != null && auth.uid == $uid",
+
+            "$templateId": {
+              ".write": "auth != null && auth.uid == $uid",
+              ".read": "auth != null && auth.uid == $uid",
+              ".validate": "newData.hasChildren(['name', 'type', 'content'])",
+
+              "name": {
+                ".write": "auth != null && auth.uid == $uid",
+                ".read": true,
+                ".validate": "newData.isString() && newData.val().length <= 100"
+              },
+              "type": {
+                ".write": "auth != null && auth.uid == $uid",
+                ".read": true,
+                ".validate": "newData.isString() && newData.val().matches(/^(text|checklist|template|notification)$/)"
+              },
+              "content": {
+                ".write": "auth != null && auth.uid == $uid",
+                ".read": true,
+                ".validate": "newData.isString() && newData.val().length <= 5000"
+              },
+              "createdAt": {
+                ".write": "auth != null && auth.uid == $uid",
+                ".read": true,
+                ".validate": "newData.isTimestamp()"
+              }
+            }
+          },
+
+          "assets": {
+            ".write": "auth != null && auth.uid == $uid",
+            ".read": "auth != null && auth.uid == $uid",
+
+            "$assetId": {
+              ".write": "auth != null && auth.uid == $uid",
+              ".read": "auth != null && auth.uid == $uid",
+              ".validate": "newData.hasChildren(['url', 'type', 'size'])",
+
+              "url": {
+                ".write": "auth != null && auth.uid == $uid",
+                ".read": true,
+                ".validate": "newData.isString() && newData.val().length <= 500"
+              },
+              "type": {
+                ".write": "auth != null && auth.uid == $uid",
+                ".read": true,
+                ".validate": "newData.isString() && newData.val().matches(/^(image|document|video|audio|other)$/)"
+              },
+              "size": {
+                ".write": "auth != null && auth.uid == $uid",
+                ".read": true,
+                ".validate": "newData.isNumber() && newData.val() >= 0"
+              },
+              "createdAt": {
+                ".write": "auth != null && auth.uid == $uid",
+                ".read": true,
+                ".validate": "newData.isTimestamp()"
+              }
+            }
+          }
+        },
+
+        // System data - Enhanced validation
+        "system": {
+          ".write": "auth != null && auth.uid == $uid",
+          ".read": "auth != null && auth.uid == $uid",
+
+          "preferences": {
+            ".write": "auth != null && auth.uid == $uid",
+            ".read": "auth != null && auth.uid == $uid",
+
+            "showTutorial": {
+              ".write": "auth != null && auth.uid == $uid",
+              ".read": true,
+              ".validate": "newData.isBoolean()"
+            },
+            "autoSave": {
+              ".write": "auth != null && auth.uid == $uid",
+              ".read": true,
+              ".validate": "newData.isBoolean()"
+            },
+            "backupFrequency": {
+              ".write": "auth != null && auth.uid == $uid",
+              ".read": true,
+              ".validate": "newData.isString() && newData.val().matches(/^(never|daily|weekly|monthly)$/)"
+            }
+          },
+
+          "usage": {
+            ".write": "false",
+            ".read": "auth != null && auth.uid == $uid",
+
+            "storageUsed": {
+              ".write": "false",
+              ".read": true,
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "projectsCreated": {
+              ".write": "false",
+              ".read": true,
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            },
+            "logsCreated": {
+              ".write": "false",
+              ".read": true,
+              ".validate": "newData.isNumber() && newData.val() >= 0"
+            }
+          }
+        }
+      }
+    },
+
+    // Admin collection - Restricted access
+    "admin": {
+      ".read": "auth != null && auth.token.admin === true",
+      ".write": "auth != null && auth.token.admin === true",
+
+      // Admin-only collections
+      "users": {
+        ".read": "auth != null && auth.token.admin === true",
+        ".write": "auth != null && auth.token.admin === true",
+
+        "$uid": {
+          ".read": "auth != null && auth.token.admin === true",
+          ".write": "auth != null && auth.token.admin === true",
+
+          // Admin can view and modify any user data
+          ".validate": "auth != null && auth.token.admin === true"
+        }
+      },
+
+      "system": {
+        ".read": "auth != null && auth.token.admin === true",
+        ".write": "auth != null && auth.token.admin === true",
+
+        // System monitoring and configuration
+        "monitoring": {
+          ".read": "auth != null && auth.token.admin === true",
+          ".write": "auth != null && auth.token.admin === true"
+        },
+        "configuration": {
+          ".read": "auth != null && auth.token.admin === true",
+          ".write": "auth != null && auth.token.admin === true"
+        },
+        "audit": {
+          ".read": "auth != null && auth.token.admin === true",
+          ".write": "auth != null && auth.token.admin === true"
+        }
+      },
+
+      // Security and rate limiting
+      "security": {
+        ".read": "auth != null && auth.token.admin === true",
+        ".write": "auth != null && auth.token.admin === true",
+
+        "rateLimits": {
+          ".read": "auth != null && auth.token.admin === true",
+          ".write": "auth != null && auth.token.admin === true"
+        },
+        "blockedIps": {
+          ".read": "auth != null && auth.token.admin === true",
+          ".write": "auth != null && auth.token.admin === true"
+        },
+        "securityLogs": {
+          ".read": "auth != null && auth.token.admin === true",
+          ".write": "auth != null && auth.token.admin === true"
+        }
+      }
+    },
+
+    // Public data - Read-only
+    "public": {
+      ".read": true,
+      ".write": "false",
+
+      // Public templates
+      "templates": {
+        ".read": true,
+        ".write": "false",
+
+        "$templateId": {
+          ".read": true,
+          ".write": "false",
+          ".validate": "newData.hasChildren(['name', 'type', 'content', 'createdAt'])",
+
+          "name": {
+            ".write": "false",
+            ".read": true,
+            ".validate": "newData.isString() && newData.val().length <= 100"
+          },
+          "type": {
+            ".write": "false",
+            ".read": true,
+            ".validate": "newData.isString() && newData.val().matches(/^(text|checklist|template|notification)$/)"
+          },
+          "content": {
+            ".write": "false",
+            ".read": true,
+            ".validate": "newData.isString() && newData.val().length <= 5000"
+          },
+          "createdAt": {
+            ".write": "false",
+            ".read": true,
+            ".validate": "newData.isTimestamp()"
+          }
+        }
+      },
+
+      // Documentation
+      "docs": {
+        ".read": true,
+        ".write": "false",
+
+        "$docId": {
+          ".read": true,
+          ".write": "false",
+          ".validate": "newData.hasChildren(['title', 'content', 'version'])",
+
+          "title": {
+            ".write": "false",
+            ".read": true,
+            ".validate": "newData.isString() && newData.val().length <= 200"
+          },
+          "content": {
+            ".write": "false",
+            ".read": true,
+            ".validate": "newData.isString() && newData.val().length <= 10000"
+          },
+          "version": {
+            ".write": "false",
+            ".read": true,
+            ".validate": "newData.isString() && newData.val().matches(/^\d+\.\d+\.\d+$/)"
+          },
+          "createdAt": {
+            ".write": "false",
+            ".read": true,
+            ".validate": "newData.isTimestamp()"
+          }
+        }
+      }
+    },
+
+    // System collections - Restricted access
+    "system": {
+      ".read": "false",
+      ".write": "false",
+
+      // Analytics and monitoring
+      "analytics": {
+        ".read": "false",
+        ".write": "false",
+
+        "usage": {
+          ".read": "false",
+          ".write": "false"
+        },
+        "performance": {
+          ".read": "false",
+          ".write": "false"
+        },
+        "errors": {
+          ".read": "false",
+          ".write": "false"
+        }
+      },
+
+      // Security and audit
+      "security": {
+        ".read": "false",
+        ".write": "false",
+
+        "audit": {
+          ".read": "false",
+          ".write": "false"
+        },
+        "logs": {
+          ".read": "false",
+          ".write": "false"
+        }
+      }
+    },
+
+    // Rate limiting and security
+    "rateLimits": {
+      ".read": "false",
+      ".write": "false",
+
+      "$userId": {
+        ".read": "false",
+        ".write": "false",
+        ".validate": "newData.hasChildren(['requests', 'windowStart', 'windowEnd'])",
+
+        "requests": {
+          ".write": "false",
+          ".read": "false",
+          ".validate": "newData.isNumber() && newData.val() >= 0"
+        },
+        "windowStart": {
+          ".write": "false",
+          ".read": "false",
+          ".validate": "newData.isTimestamp()"
+        },
+        "windowEnd": {
+          ".write": "false",
+          ".read": "false",
+          ".validate": "newData.isTimestamp()"
+        }
+      }
+    },
+
+    // Username uniqueness index
+    "usernames": {
+      ".read": "false",
+      ".write": "false",
+
+      "$username": {
+        ".read": "false",
+        ".write": "auth != null && auth.uid == newData.val()",
+        ".validate": "newData.isString() && newData.val().matches(/^[a-zA-Z0-9_]{3,20}$/) && newData.val().length <= 20"
+      }
+    }
+  }
+}

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
+  <title id="title">OmniAnalytics</title>
+  <desc id="desc">Two connected arcs forming the OmniAnalytics mark</desc>
+  <defs>
+    <linearGradient id="background" x1="52" y1="40" x2="460" y2="476" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#888CFF"/>
+      <stop offset="1" stop-color="#5147EE"/>
+    </linearGradient>
+  </defs>
+  <rect width="512" height="512" rx="112" fill="url(#background)"/>
+  <path d="M158 174c79-80 208-34 221 80" fill="none" stroke="#fff" stroke-width="43" stroke-linecap="round"/>
+  <path d="M354 338c-79 80-208 34-221-80" fill="none" stroke="#fff" stroke-width="43" stroke-linecap="round"/>
+  <circle cx="158" cy="174" r="21.5" fill="#fff"/>
+  <circle cx="382" cy="258" r="31" fill="#fff"/>
+  <circle cx="130" cy="254" r="31" fill="#fff"/>
+</svg>
