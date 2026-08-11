@@ -1,57 +1,44 @@
-import React, { useEffect, useState } from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { Provider, useSelector, useDispatch } from 'react-redux';
+import { useEffect, useState } from 'react';
+import { BrowserRouter as Router, Navigate, Route, Routes } from 'react-router-dom';
+import { Provider, useDispatch, useSelector } from 'react-redux';
 import store from './store/store';
 import { onAuthChange } from './services/authService';
-import { setUser, clearUser } from './store/slices/authSlice';
-import { ToastProvider, useToast } from './components/Toast';
-import { EncouragementChecker } from './hooks/useEncouragement';
-import BibleVersePopup from './components/BibleVersePopup';
-import Countdown from './components/Countdown';
-import FestiveBanner from './components/FestiveBanner';
+import { clearUser, setUser } from './store/slices/authSlice';
+import { ToastProvider } from './components/Toast';
+import AppShell from './components/AppShell/AppShell';
 
 // Pages
 import LandingPage from './pages/LandingPage/LandingPage';
-import LoginPage from './pages/LoginPage/LoginPage';
-import SignupPage from './pages/SignupPage/SignupPage';
 import DashboardPage from './pages/DashboardPage/DashboardPage';
 import ProjectsPage from './pages/ProjectsPage/ProjectsPage';
 import ProjectDetailPage from './pages/ProjectDetailPage/ProjectDetailPage';
+import FeaturePreviewPage from './pages/FeaturePreviewPage/FeaturePreviewPage';
 import SettingsPage from './pages/SettingsPage/SettingsPage';
 import ProfilePage from './pages/ProfilePage/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
 
 import './index.css';
 
-const ProtectedRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useSelector(state => state.auth);
+function LoadingScreen() {
+  return (
+    <div className="loading-screen" role="status">
+      <div className="loader" />
+      <p>Loading OmniAnalytics…</p>
+    </div>
+  );
+}
 
-  if (loading) {
-    return (
-      <div className="loading-screen">
-        <div className="loader"></div>
-        <p>Loading...</p>
-      </div>
-    );
-  }
-
+function ProtectedRoute({ children }) {
+  const { isAuthenticated, loading } = useSelector((state) => state.auth);
+  if (loading) return <LoadingScreen />;
   return isAuthenticated ? children : <Navigate to="/login" replace />;
-};
+}
 
-const PublicRoute = ({ children }) => {
-  const { isAuthenticated, loading } = useSelector(state => state.auth);
-
-  if (loading) {
-    return (
-      <div className="loading-screen">
-        <div className="loader"></div>
-        <p>Loading...</p>
-      </div>
-    );
-  }
-
+function PublicRoute({ children }) {
+  const { isAuthenticated, loading } = useSelector((state) => state.auth);
+  if (loading) return <LoadingScreen />;
   return isAuthenticated ? <Navigate to="/dashboard" replace /> : children;
-};
+}
 
 function AppContent() {
   const dispatch = useDispatch();
@@ -59,13 +46,13 @@ function AppContent() {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    const unsubscribe = onAuthChange((user) => {
-      if (user) {
-        setUserData(user);
-        dispatch(setUser({ 
-          uid: user.uid, 
-          email: user.email, 
-          displayName: user.displayName || '' 
+    const unsubscribe = onAuthChange((authenticatedUser) => {
+      if (authenticatedUser) {
+        setUserData(authenticatedUser);
+        dispatch(setUser({
+          uid: authenticatedUser.uid,
+          email: authenticatedUser.email,
+          displayName: authenticatedUser.displayName || '',
         }));
       } else {
         setUserData(null);
@@ -77,77 +64,42 @@ function AppContent() {
     return () => unsubscribe();
   }, [dispatch]);
 
-  if (loading) {
-    return (
-      <div className="loading-screen">
-        <div className="loader"></div>
-        <p>Loading TaskFlow...</p>
-      </div>
-    );
-  }
+  if (loading) return <LoadingScreen />;
 
   return (
     <Routes>
-      {/* Public Routes */}
-      <Route path="/" element={<LandingPage />} />
-      <Route path="/login" element={
-        <PublicRoute>
-          <LoginPage />
-        </PublicRoute>
-      } />
-      <Route path="/signup" element={
-        <PublicRoute>
-          <SignupPage />
-        </PublicRoute>
-      } />
+      <Route path="/" element={<PublicRoute><LandingPage /></PublicRoute>} />
+      <Route path="/login" element={<PublicRoute><LandingPage /></PublicRoute>} />
+      <Route path="/signup" element={<PublicRoute><LandingPage initialTab="signup" /></PublicRoute>} />
 
-      {/* Protected Routes */}
-      <Route path="/dashboard" element={
-        <ProtectedRoute>
-          <DashboardPage user={user} />
-        </ProtectedRoute>
-      } />
-      <Route path="/projects" element={
-        <ProtectedRoute>
-          <ProjectsPage />
-        </ProtectedRoute>
-      } />
-      <Route path="/projects/:projectId" element={
-        <ProtectedRoute>
-          <ProjectDetailPage />
-        </ProtectedRoute>
-      } />
-      <Route path="/settings" element={
-        <ProtectedRoute>
-          <SettingsPage user={user} />
-        </ProtectedRoute>
-      } />
-      <Route path="/profile" element={
-        <ProtectedRoute>
-          <ProfilePage />
-        </ProtectedRoute>
-      } />
+      <Route element={<ProtectedRoute><AppShell user={user} /></ProtectedRoute>}>
+        <Route path="/dashboard" element={<DashboardPage user={user} />} />
+        <Route path="/projects" element={<ProjectsPage />} />
+        <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
+        <Route path="/issues" element={<FeaturePreviewPage />} />
+        <Route path="/repositories" element={<FeaturePreviewPage />} />
+        <Route path="/cicd" element={<FeaturePreviewPage />} />
+        <Route path="/releases" element={<FeaturePreviewPage />} />
+        <Route path="/analytics" element={<FeaturePreviewPage />} />
+        <Route path="/security" element={<FeaturePreviewPage />} />
+        <Route path="/docs" element={<FeaturePreviewPage />} />
+        <Route path="/settings" element={<SettingsPage user={user} />} />
+        <Route path="/profile" element={<ProfilePage />} />
+      </Route>
 
-      {/* Error Routes */}
-      <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<NotFoundPage />} />
     </Routes>
   );
 }
 
-function App() {
+export default function App() {
   return (
     <Provider store={store}>
       <Router>
         <ToastProvider>
-          <EncouragementChecker />
-          <Countdown />
-          <BibleVersePopup />
           <AppContent />
         </ToastProvider>
       </Router>
     </Provider>
   );
 }
-
-export default App;

@@ -5,5 +5,7 @@ dist/
 .env.*
 !.env.example
 .firebase/
+playwright-report/
+test-results/
 *.tar.gz
 .DS_Store

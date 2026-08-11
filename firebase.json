@@ -4,7 +4,6 @@
     "indexes": "firestore.indexes.json"
   },
   "hosting": {
-    "site": "project-tracker-c2cd2",
     "public": "dist",
     "ignore": ["firebase.json", "**/.*", "**/node_modules/**", "electron/**", "release/**"],
     "rewrites": [

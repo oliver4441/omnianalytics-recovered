@@ -16,7 +16,7 @@ function createWindow() {
     height: 800,
     minWidth: 800,
     minHeight: 600,
-    title: 'Fairytale',
+    title: 'OmniAnalytics',
     icon: path.join(__dirname, '../public/images/app-icon.png'),
     webPreferences: {
       nodeIntegration: false,
@@ -32,7 +32,7 @@ function createWindow() {
 
   mainWindow.once('ready-to-show', () => {
     mainWindow.show();
-    console.log('Fairytale app loaded');
+    console.log('OmniAnalytics app loaded');
   });
 
   if (isDev) {
@@ -97,14 +97,14 @@ function createMenu() {
       label: 'Help',
       submenu: [
         {
-          label: 'About Fairytale',
+          label: 'About OmniAnalytics',
           click: () => {
             const { dialog } = require('electron');
             dialog.showMessageBox(mainWindow, {
               type: 'info',
-              title: 'About Fairytale',
-              message: 'Fairytale - Project Management App',
-              detail: 'Version 1.0.0\n\nA beautiful project management app with offline support.'
+              title: 'About OmniAnalytics',
+              message: 'OmniAnalytics Engineering Workspace',
+              detail: 'Version 1.0.0\n\nA unified engineering operations workspace with offline support.'
             });
           }
         }
@@ -134,7 +134,7 @@ app.on('window-all-closed', () => {
 });
 
 // Handle protocol for PWA
-app.setAsDefaultProtocolClient('fairytale');
+app.setAsDefaultProtocolClient('omnianalytics');
 
 app.on('open-url', (event, url) => {
   event.preventDefault();

@@ -1,11 +1,12 @@
 {
-  "name": "Fairytale - Project Tracker",
-  "short_name": "Fairytale",
-  "description": "Fairytale - Project Management App with offline support",
+  "name": "OmniAnalytics Engineering Workspace",
+  "short_name": "OmniAnalytics",
+  "description": "A unified engineering workspace for planning, building, shipping, and operating software.",
   "start_url": "/",
+  "scope": "/",
   "display": "standalone",
-  "background_color": "#1a1a2e",
-  "theme_color": "#6b5b95",
+  "background_color": "#101522",
+  "theme_color": "#5147ee",
   "orientation": "any",
   "icons": [
     {
@@ -16,28 +17,13 @@
     },
     {
       "src": "/images/app-icon.png",
-      "sizes": "192x192",
-      "type": "image/png",
-      "purpose": "any maskable"
-    },
-    {
-      "src": "/images/app-icon.png",
       "sizes": "512x512",
       "type": "image/png",
       "purpose": "any maskable"
     }
   ],
-  "screenshots": [
-    {
-      "src": "/images/app-icon.png",
-      "sizes": "1280x720",
-      "type": "image/png",
-      "form_factor": "wide"
-    }
-  ],
-  "categories": ["productivity", "business"],
+  "categories": ["developer", "productivity", "business"],
   "lang": "en",
-  "scope": "/",
   "prefer_related_applications": false,
   "handle_links": "auto"
 }
