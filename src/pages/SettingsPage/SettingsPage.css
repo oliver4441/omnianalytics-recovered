@@ -22,7 +22,33 @@
 .settings-card__body--action { display: flex; align-items: center; justify-content: space-between; gap: 20px; }
 .settings-signout { min-height: 38px; display: flex; flex: 0 0 auto; align-items: center; gap: 7px; padding: 0 13px; border: 1px solid color-mix(in srgb, var(--oa-danger-500) 38%, var(--oa-border)); border-radius: 8px; background: var(--oa-surface); color: var(--oa-danger-700); font-size: 10px; font-weight: 660; }
 .settings-signout:disabled { cursor: wait; opacity: .6; }
+.settings-connections { max-width: 650px; display: flex; flex-direction: column; margin-top: 15px; border: 1px solid var(--oa-border); border-radius: 8px; }
+.settings-connections li { min-height: 52px; display: flex; align-items: center; gap: 12px; padding: 10px 12px; }
+.settings-connections li + li { border-top: 1px solid var(--oa-border); }
+.settings-connections__mark { width: 32px; height: 32px; display: grid; flex: 0 0 auto; place-items: center; border: 1px solid var(--oa-border); border-radius: 8px; background: var(--oa-surface-hover); color: var(--oa-text); }
+.settings-connections__meta { min-width: 0; flex: 1; }
+.settings-connections__meta strong { display: block; color: var(--oa-text); font-size: 11px; font-weight: 660; }
+.settings-connections__meta small { display: block; margin-top: 2px; color: var(--oa-text-muted); font-size: 9px; }
+.settings-connections__link,
+.settings-connections__unlink { min-height: 34px; flex: 0 0 auto; padding: 0 13px; border-radius: 7px; font-size: 10px; font-weight: 660; transition: background var(--oa-transition-fast), border var(--oa-transition-fast), color var(--oa-transition-fast), transform var(--oa-transition-fast); }
+.settings-connections__link { border: 1px solid var(--oa-brand-600); background: var(--oa-brand-600); color: white; }
+.settings-connections__link:hover { background: var(--oa-brand-700); border-color: var(--oa-brand-700); }
+.settings-connections__link:active,
+.settings-connections__unlink:active { transform: translateY(1px); }
+.settings-connections__unlink { border: 1px solid var(--oa-border-strong); background: var(--oa-surface); color: var(--oa-text-secondary); }
+.settings-connections__unlink:hover:not(:disabled) { border-color: color-mix(in srgb, var(--oa-danger-500) 38%, var(--oa-border)); background: var(--oa-danger-50); color: var(--oa-danger-700); }
+.settings-connections__link:disabled,
+.settings-connections__unlink:disabled { cursor: wait; opacity: .6; }
+.settings-connections__static { flex: 0 0 auto; color: var(--oa-text-muted); font-size: 9px; font-weight: 650; }
+.settings-connections__note { display: flex; align-items: center; gap: 6px; margin-top: 10px; color: var(--oa-warning-700); font-size: 9px; }
+.settings-connections__message { display: flex; align-items: flex-start; gap: 7px; margin-top: 13px; padding: 9px 11px; border-radius: 8px; font-size: 10px; }
+.settings-connections__message--success { background: var(--oa-success-50); color: var(--oa-success-700); }
+.settings-connections__message--error { background: var(--oa-danger-50); color: var(--oa-danger-700); }
+.settings-connections__message svg { flex: 0 0 auto; }
 [data-theme='dark'] .settings-card__icon { background: rgba(99, 91, 255, .11); }
+[data-theme='dark'] .settings-connections__note { color: #f1be55; }
+[data-theme='dark'] .settings-connections__message--success { background: rgba(23, 166, 115, .12); color: #61d9aa; }
+[data-theme='dark'] .settings-connections__message--error { background: rgba(229, 72, 77, .1); color: #ff9ca1; }
 [data-theme='dark'] .settings-page__alert { background: rgba(229, 72, 77, .1); color: #ff9ca1; }
 @media (min-width: 1440px) { .settings-page { padding: 34px 42px 55px; } }
 @media (max-width: 1023px) { .settings-page { padding: 25px 24px 45px; } }
@@ -36,4 +62,6 @@
   .settings-account div + div { border-top: 1px solid var(--oa-border); border-left: 0; }
   .settings-card__body--action { align-items: stretch; flex-direction: column; }
   .settings-signout { min-height: 44px; justify-content: center; }
+  .settings-connections__link,
+  .settings-connections__unlink { min-height: 41px; }
 }

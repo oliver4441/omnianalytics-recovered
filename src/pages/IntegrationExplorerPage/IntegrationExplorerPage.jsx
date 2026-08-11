@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import Icon from '../../components/Icon';
+import { useToast } from '../../components/Toast';
 import {
   filterIntegrationDataset,
   getDatasetFacets,
@@ -40,6 +41,7 @@ const getSection = (pathname) => sections.find((section) => section.path === pat
 export default function IntegrationExplorerPage() {
   const location = useLocation();
   const navigate = useNavigate();
+  const { showInfo } = useToast();
   const activeSection = getSection(location.pathname);
   const requestedView = new URLSearchParams(location.search).get('view');
   const activeView = ['graph', 'table', 'timeline'].includes(requestedView)
@@ -200,7 +202,7 @@ export default function IntegrationExplorerPage() {
         </div>
         <div className="integration-hero__actions">
           <button onClick={() => setDiscoveryOpen(!discoveryOpen)}><Icon name="search" size={15} /> Trace relationship</button>
-          <button disabled title="Provider synchronization requires a configured integration"><Icon name="refresh" size={15} /> Synchronize</button>
+          <button onClick={() => showInfo('Synchronization unavailable', 'Provider synchronization requires a configured integration.')} title="Provider synchronization requires a configured integration" type="button"><Icon name="refresh" size={15} /> Synchronize</button>
         </div>
       </header>
 

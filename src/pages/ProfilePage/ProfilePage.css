@@ -18,6 +18,11 @@
 .account-card--identity > div { min-width: 0; flex: 1; }
 .account-card--identity h2 { font-size: 16px; }
 .account-card--identity p { overflow: hidden; margin-top: 4px; color: var(--oa-text-secondary); font-size: 10px; text-overflow: ellipsis; white-space: nowrap; }
+.account-card__github { display: flex; align-items: center; gap: 6px; margin-top: 6px; color: var(--oa-text-secondary); font-family: var(--oa-font-mono); font-size: 10px; font-weight: 580; }
+.account-card__github svg { flex: 0 0 auto; color: var(--oa-text); }
+.account-card__providers { display: flex; flex-wrap: wrap; gap: 6px; margin: 11px 0 0; padding: 0; list-style: none; }
+.account-card__provider { display: inline-flex; align-items: center; gap: 5px; padding: 4px 9px; border: 1px solid var(--oa-border); border-radius: var(--oa-radius-full); background: var(--oa-surface-hover); color: var(--oa-text-secondary); font-size: 8px; font-weight: 660; }
+.account-card__provider svg { flex: 0 0 auto; color: var(--oa-text); }
 .account-card__verified { display: flex; align-items: center; gap: 5px; padding: 5px 8px; border-radius: var(--oa-radius-full); background: var(--oa-success-50); color: var(--oa-success-700); font-size: 8px; font-weight: 680; }
 .account-card__loading { padding: 30px 0 12px; color: var(--oa-text-muted); font-size: 10px; text-align: center; }
 .account-access-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); padding: 21px 0; }

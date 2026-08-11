@@ -1,8 +1,9 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import GitHubMark from '../../components/GitHubMark';
 import Icon from '../../components/Icon';
-import { logoutUser } from '../../services/authService';
+import { getCurrentUser, getUserProfile, logoutUser } from '../../services/authService';
 import { getAllUserProjects } from '../../services/projectService';
 import { clearUser } from '../../store/slices/authSlice';
 import './ProfilePage.css';
@@ -15,6 +16,8 @@ function ProfilePage() {
   const [loading, setLoading] = useState(true);
   const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState('');
+  const [providers, setProviders] = useState([]);
+  const [githubUsername, setGithubUsername] = useState('');
 
   useEffect(() => {
     let active = true;
@@ -30,6 +33,34 @@ function ProfilePage() {
       });
     return () => { active = false; };
   }, []);
+
+  useEffect(() => {
+    let active = true;
+    const currentUser = getCurrentUser();
+
+    if (currentUser) {
+      const providerIds = (currentUser.providerData || [])
+        .map((entry) => entry.providerId)
+        .filter(Boolean);
+      if (active) setProviders(providerIds);
+    }
+
+    const loadProfile = async () => {
+      if (!currentUser) return;
+      try {
+        const profile = await getUserProfile(currentUser.uid);
+        if (active && profile?.githubUsername) setGithubUsername(profile.githubUsername);
+      } catch {
+        // Non-critical: provider badges still render from live auth state.
+      }
+    };
+    loadProfile();
+
+    return () => { active = false; };
+  }, []);
+
+  const hasGithub = providers.includes('github.com');
+  const hasPassword = providers.includes('password');
 
   const summary = useMemo(() => ({
     owned: projects.filter((project) => project.ownerId === user?.uid).length,
@@ -79,6 +110,15 @@ function ProfilePage() {
             <span>Signed-in identity</span>
             <h2 id="identity-heading">{user?.displayName || 'OmniAnalytics user'}</h2>
             <p>{user?.email || 'Email unavailable'}</p>
+            {githubUsername && (
+              <p className="account-card__github"><GitHubMark /> @{githubUsername}</p>
+            )}
+            {(hasGithub || hasPassword) && (
+              <ul className="account-card__providers" aria-label="Sign-in providers">
+                {hasGithub && <li className="account-card__provider"><GitHubMark /> GitHub</li>}
+                {hasPassword && <li className="account-card__provider"><Icon name="shield" size={12} /> Email &amp; password</li>}
+              </ul>
+            )}
           </div>
           <span className="account-card__verified"><Icon name="checkCircle" size={14} /> Authenticated</span>
         </section>

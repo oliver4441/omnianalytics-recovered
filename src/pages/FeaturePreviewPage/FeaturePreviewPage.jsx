@@ -1,6 +1,7 @@
 import { useLocation, useNavigate } from 'react-router-dom';
 import { getFeatureState } from '../../config/featureFlags';
 import Icon from '../../components/Icon';
+import { useToast } from '../../components/Toast';
 import './FeaturePreviewPage.css';
 
 const modules = {
@@ -79,8 +80,18 @@ const modules = {
 export default function FeaturePreviewPage() {
   const { pathname } = useLocation();
   const navigate = useNavigate();
+  const { showInfo } = useToast();
   const module = modules[pathname] || modules['/repositories'];
   const featureState = getFeatureState(module.flag);
+
+  // Preview modules have no live source yet. Every action stays clickable so
+  // the user always gets a visible reason instead of a silent dead click.
+  const handleUnavailable = (action) => {
+    showInfo(
+      `${module.title} is in preview`,
+      `"${action}" becomes available once this module is connected to a data source.`
+    );
+  };
 
   return (
     <div className="feature-preview-page">
@@ -93,8 +104,8 @@ export default function FeaturePreviewPage() {
           </div>
           <p>{module.description}</p>
           <div className="feature-preview-hero__actions">
-            <button className="feature-action feature-action--primary" disabled title="Setup actions are not available in this preview">{module.action} <Icon name="arrowRight" size={15} /></button>
-            <button className="feature-action" disabled title="Guidance is not available in this preview">{module.secondary}</button>
+            <button className="feature-action feature-action--primary" onClick={() => handleUnavailable(module.action)} title="Requires a connected data source" type="button">{module.action} <Icon name="arrowRight" size={15} /></button>
+            <button className="feature-action" onClick={() => handleUnavailable(module.secondary)} title="Requires a connected data source" type="button">{module.secondary}</button>
           </div>
         </div>
         <div className="feature-preview-hero__graphic" aria-hidden="true">
@@ -117,7 +128,7 @@ export default function FeaturePreviewPage() {
             <span><Icon name={module.icon} size={25} /></span>
             <h3>No {module.title.toLowerCase()} data yet</h3>
             <p>OmniAnalytics only shows records received from your projects and connected systems. Sample data is never mixed with workspace metrics.</p>
-            <button className="feature-action feature-action--primary" disabled title="Setup actions are not available in this preview">{module.action}</button>
+            <button className="feature-action feature-action--primary" onClick={() => handleUnavailable(module.action)} title="Requires a connected data source" type="button">{module.action}</button>
           </div>
         </section>
 

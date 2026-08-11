@@ -1,8 +1,9 @@
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
+import GitHubMark from '../../components/GitHubMark';
 import Icon from '../../components/Icon';
-import { logoutUser } from '../../services/authService';
+import { formatAuthError, getCurrentUser, linkGitHub, logoutUser, unlinkGitHub } from '../../services/authService';
 import { clearUser } from '../../store/slices/authSlice';
 import './SettingsPage.css';
 
@@ -12,6 +13,54 @@ function SettingsPage({ user }) {
   const [theme, setTheme] = useState(() => document.documentElement.dataset.theme || 'light');
   const [signingOut, setSigningOut] = useState(false);
   const [error, setError] = useState('');
+  const [providers, setProviders] = useState([]);
+  const [linking, setLinking] = useState(false);
+  const [accountMessage, setAccountMessage] = useState({ type: '', text: '' });
+
+  const refreshProviders = () => {
+    const currentUser = getCurrentUser();
+    const ids = (currentUser?.providerData || [])
+      .map((entry) => entry.providerId)
+      .filter(Boolean);
+    setProviders(ids);
+  };
+
+  useEffect(() => {
+    refreshProviders();
+  }, []);
+
+  const hasGithub = providers.includes('github.com');
+  const hasPassword = providers.includes('password');
+  // Never leave an account with zero sign-in methods.
+  const canUnlinkGithub = hasGithub && providers.length > 1;
+
+  const handleLinkGitHub = async () => {
+    setLinking(true);
+    setAccountMessage({ type: '', text: '' });
+    try {
+      await linkGitHub();
+      refreshProviders();
+      setAccountMessage({ type: 'success', text: 'GitHub is now connected to this account.' });
+    } catch (linkError) {
+      setAccountMessage({ type: 'error', text: formatAuthError(linkError) });
+    } finally {
+      setLinking(false);
+    }
+  };
+
+  const handleUnlinkGitHub = async () => {
+    setLinking(true);
+    setAccountMessage({ type: '', text: '' });
+    try {
+      await unlinkGitHub();
+      refreshProviders();
+      setAccountMessage({ type: 'success', text: 'GitHub disconnected from this account.' });
+    } catch (unlinkError) {
+      setAccountMessage({ type: 'error', text: formatAuthError(unlinkError) });
+    } finally {
+      setLinking(false);
+    }
+  };
 
   const selectTheme = (value) => {
     setTheme(value);
@@ -68,6 +117,51 @@ function SettingsPage({ user }) {
               <div><dt>Email</dt><dd>{user?.email || 'Unavailable'}</dd></div>
             </dl>
             <button className="settings-card__link" type="button" onClick={() => navigate('/profile')}>Open profile <Icon name="arrowRight" size={14} /></button>
+          </div>
+        </section>
+
+        <section className="settings-card" aria-labelledby="connections-heading">
+          <div className="settings-card__icon"><Icon name="link" size={18} /></div>
+          <div className="settings-card__body">
+            <h2 id="connections-heading">Connected accounts</h2>
+            <p>Link GitHub to sign in with it and keep your engineering identity available.</p>
+
+            {accountMessage.text && (
+              <p className={`settings-connections__message settings-connections__message--${accountMessage.type}`} role={accountMessage.type === 'error' ? 'alert' : 'status'}>
+                {accountMessage.type === 'error' && <Icon name="issue" size={14} />}
+                <span>{accountMessage.text}</span>
+              </p>
+            )}
+
+            <ul className="settings-connections">
+              <li>
+                <span className="settings-connections__mark"><GitHubMark /></span>
+                <div className="settings-connections__meta">
+                  <strong>GitHub</strong>
+                  <small>{hasGithub ? 'Connected' : 'Not connected'}</small>
+                </div>
+                {hasGithub ? (
+                  <button className="settings-connections__unlink" disabled={linking || !canUnlinkGithub} type="button" onClick={handleUnlinkGitHub}>
+                    {linking ? 'Working…' : 'Unlink'}
+                  </button>
+                ) : (
+                  <button className="settings-connections__link" disabled={linking} type="button" onClick={handleLinkGitHub}>
+                    {linking ? 'Working…' : 'Link GitHub'}
+                  </button>
+                )}
+              </li>
+              <li>
+                <span className="settings-connections__mark"><Icon name="shield" size={15} /></span>
+                <div className="settings-connections__meta">
+                  <strong>Email &amp; password</strong>
+                  <small>{hasPassword ? 'Connected' : 'Not connected'}</small>
+                </div>                  {hasPassword && <span className="settings-connections__static">Primary</span>}
+              </li>
+            </ul>
+
+            {hasGithub && !canUnlinkGithub && (
+              <p className="settings-connections__note"><Icon name="shield" size={13} /> GitHub is your only sign-in method, so it can&apos;t be unlinked.</p>
+            )}
           </div>
         </section>
 
