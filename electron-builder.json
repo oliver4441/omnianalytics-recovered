@@ -1,6 +1,6 @@
 {
-  "appId": "com.fairytale.app",
-  "productName": "Fairytale",
+  "appId": "com.omnianalytics.app",
+  "productName": "OmniAnalytics",
   "directories": {
     "output": "release"
   },
@@ -47,7 +47,7 @@
       }
     ],
     "icon": "public/images",
-    "category": "Office",
+    "category": "Development",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
   },
   "mac": {
@@ -62,11 +62,7 @@
       }
     ],
     "icon": "public/images/app-icon.png",
-    "category": "public.app-category.productivity",
+    "category": "public.app-category.developer-tools",
     "artifactName": "${productName}-${version}-${os}-${arch}.${ext}"
-  },
-  "publish": {
-    "provider": "generic",
-    "url": "https://fairytale.web.app"
   }
 }

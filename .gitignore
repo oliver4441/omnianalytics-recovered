@@ -5,5 +5,9 @@ dist/
 .env.*
 !.env.example
 .firebase/
+playwright-report/
+test-results/
+public/integration-metadata.json
 *.tar.gz
 .DS_Store
+.vercel

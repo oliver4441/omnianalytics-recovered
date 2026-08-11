@@ -1,31 +1,65 @@
 import {
-  collection,
   addDoc,
-  getDocs,
-  getDoc,
-  doc,
-  updateDoc,
-  deleteDoc,
-  query,
-  where,
-  Timestamp,
-  arrayUnion,
   arrayRemove,
+  arrayUnion,
+  collection,
+  deleteDoc,
+  doc,
+  getDoc,
+  getDocs,
+  query,
+  Timestamp,
+  updateDoc,
+  where,
+  writeBatch,
 } from 'firebase/firestore';
 import { db } from '../firebase.config';
 import { getCurrentUser } from './authService';
-import { createProject as awardXPForProject, completeProject as awardXPForComplete } from './rewardsService';
+
+const getNormalizedMemberIds = (project) => {
+  const ids = new Set(project.memberIds || []);
+  if (project.ownerId) ids.add(project.ownerId);
+
+  (project.teamMembers || []).forEach((member) => {
+    if (member?.uid && !member.uid.startsWith('invite-') && member.status !== 'pending') {
+      ids.add(member.uid);
+    }
+  });
+
+  return [...ids];
+};
+
+const userCanAccessProject = (project, userId) => (
+  project.ownerId === userId || getNormalizedMemberIds(project).includes(userId)
+);
+
+export const assertProjectAccess = async (projectId, { ownerOnly = false } = {}) => {
+  const user = getCurrentUser();
+  if (!user) throw new Error('User not authenticated');
+
+  const projectRef = doc(db, 'projects', projectId);
+  const projectSnapshot = await getDoc(projectRef);
+  if (!projectSnapshot.exists()) throw new Error('Project not found');
+
+  const project = { id: projectSnapshot.id, ...projectSnapshot.data() };
+  const allowed = ownerOnly ? project.ownerId === user.uid : userCanAccessProject(project, user.uid);
+  if (!allowed) throw new Error('You do not have access to this project');
+
+  return { project, projectRef, user };
+};
 
 export const createProject = async (projectData) => {
   try {
     const user = getCurrentUser();
     if (!user) throw new Error('User not authenticated');
 
-    const docRef = await addDoc(collection(db, 'projects'), {
+    const now = Timestamp.now();
+    const projectRef = await addDoc(collection(db, 'projects'), {
       ...projectData,
       ownerId: user.uid,
-      createdAt: Timestamp.now(),
-      updatedAt: Timestamp.now(),
+      memberIds: [user.uid],
+      createdAt: now,
+      updatedAt: now,
       status: 'active',
       taskCount: 0,
       teamMembers: [
@@ -34,13 +68,12 @@ export const createProject = async (projectData) => {
           email: user.email,
           displayName: user.displayName || user.email,
           role: 'owner',
-          joinedAt: Timestamp.now(),
-        }
+          joinedAt: now,
+        },
       ],
     });
 
-    await awardXPForProject(user.uid);
-    return docRef.id;
+    return projectRef.id;
   } catch (error) {
     throw new Error(error.message);
   }
@@ -51,15 +84,23 @@ export const getUserProjects = async () => {
     const user = getCurrentUser();
     if (!user) throw new Error('User not authenticated');
 
-    const q = query(
-      collection(db, 'projects'),
-      where('ownerId', '==', user.uid)
-    );
-    const querySnapshot = await getDocs(q);
+    const ownedQuery = query(collection(db, 'projects'), where('ownerId', '==', user.uid));
+    const querySnapshot = await getDocs(ownedQuery);
     const projects = [];
-    querySnapshot.forEach((doc) => {
-      projects.push({ id: doc.id, ...doc.data() });
+    const migrations = [];
+
+    querySnapshot.forEach((projectDocument) => {
+      const data = projectDocument.data();
+      const memberIds = getNormalizedMemberIds(data);
+      projects.push({ id: projectDocument.id, ...data, memberIds });
+
+      // Incrementally normalize recovered records without requiring a destructive migration.
+      if (!Array.isArray(data.memberIds) || !data.memberIds.includes(user.uid)) {
+        migrations.push(updateDoc(projectDocument.ref, { memberIds, updatedAt: Timestamp.now() }));
+      }
     });
+
+    if (migrations.length) await Promise.allSettled(migrations);
     return projects;
   } catch (error) {
     throw new Error(error.message);
@@ -71,17 +112,15 @@ export const getSharedProjects = async () => {
     const user = getCurrentUser();
     if (!user) throw new Error('User not authenticated');
 
-    const q = query(
+    const sharedQuery = query(
       collection(db, 'projects'),
-      where('teamMembers', 'array-contains', {
-        uid: user.uid,
-        role: 'member'
-      })
+      where('memberIds', 'array-contains', user.uid)
     );
-    const querySnapshot = await getDocs(q);
+    const querySnapshot = await getDocs(sharedQuery);
     const projects = [];
-    querySnapshot.forEach((doc) => {
-      projects.push({ id: doc.id, ...doc.data() });
+    querySnapshot.forEach((projectDocument) => {
+      const data = projectDocument.data();
+      if (data.ownerId !== user.uid) projects.push({ id: projectDocument.id, ...data });
     });
     return projects;
   } catch (error) {
@@ -90,38 +129,37 @@ export const getSharedProjects = async () => {
 };
 
 export const getAllUserProjects = async () => {
-  const ownedProjects = await getUserProjects();
-  const sharedProjects = await getSharedProjects();
+  const [ownedProjects, sharedProjects] = await Promise.all([
+    getUserProjects(),
+    getSharedProjects(),
+  ]);
   const allProjects = [...ownedProjects];
-  const existingIds = new Set(allProjects.map(p => p.id));
-  sharedProjects.forEach(p => {
-    if (!existingIds.has(p.id)) {
-      allProjects.push(p);
-    }
+  const existingIds = new Set(allProjects.map((project) => project.id));
+  sharedProjects.forEach((project) => {
+    if (!existingIds.has(project.id)) allProjects.push(project);
   });
   return allProjects;
 };
 
 export const getProject = async (projectId) => {
   try {
-    const docRef = doc(db, 'projects', projectId);
-    const docSnap = await getDoc(docRef);
-    if (docSnap.exists()) {
-      return { id: docSnap.id, ...docSnap.data() };
-    }
-    return null;
+    const { project } = await assertProjectAccess(projectId);
+    return project;
   } catch (error) {
+    if (error.message === 'Project not found') return null;
     throw new Error(error.message);
   }
 };
 
 export const updateProject = async (projectId, updateData) => {
   try {
-    const docRef = doc(db, 'projects', projectId);
-    await updateDoc(docRef, {
-      ...updateData,
-      updatedAt: Timestamp.now(),
-    });
+    const { projectRef } = await assertProjectAccess(projectId);
+    const protectedFields = ['ownerId', 'memberIds', 'teamMembers', 'pendingInvites'];
+    if (protectedFields.some((field) => Object.prototype.hasOwnProperty.call(updateData, field))) {
+      throw new Error('Project access fields must be changed through team management');
+    }
+
+    await updateDoc(projectRef, { ...updateData, updatedAt: Timestamp.now() });
   } catch (error) {
     throw new Error(error.message);
   }
@@ -129,8 +167,23 @@ export const updateProject = async (projectId, updateData) => {
 
 export const deleteProject = async (projectId) => {
   try {
-    const docRef = doc(db, 'projects', projectId);
-    await deleteDoc(docRef);
+    const { projectRef } = await assertProjectAccess(projectId, { ownerOnly: true });
+    const taskSnapshot = await getDocs(
+      query(collection(db, 'tasks'), where('projectId', '==', projectId)),
+    );
+    const taskDocuments = taskSnapshot.docs;
+
+    // Keep each batch below Firestore's 500-operation limit. The project stays in
+    // place until its tasks are gone so task-delete authorization can still read it.
+    for (let index = 0; index < taskDocuments.length; index += 450) {
+      const batch = writeBatch(db);
+      taskDocuments.slice(index, index + 450).forEach((taskDocument) => {
+        batch.delete(taskDocument.ref);
+      });
+      await batch.commit();
+    }
+
+    await deleteDoc(projectRef);
   } catch (error) {
     throw new Error(error.message);
   }
@@ -138,34 +191,21 @@ export const deleteProject = async (projectId) => {
 
 export const addTeamMember = async (projectId, email, role = 'member') => {
   try {
-    const user = getCurrentUser();
-    if (!user) throw new Error('User not authenticated');
-
-    const docRef = doc(db, 'projects', projectId);
-    const docSnap = await getDoc(docRef);
-    
-    if (!docSnap.exists()) {
-      throw new Error('Project not found');
-    }
-
-    const project = docSnap.data();
-    if (project.ownerId !== user.uid) {
-      throw new Error('Only the project owner can add team members');
-    }
-
+    const { projectRef, user } = await assertProjectAccess(projectId, { ownerOnly: true });
+    const normalizedEmail = email.trim().toLowerCase();
     const newMember = {
       uid: `invite-${Date.now()}`,
-      email: email,
-      displayName: email.split('@')[0],
-      role: role,
+      email: normalizedEmail,
+      displayName: normalizedEmail.split('@')[0],
+      role,
       invitedBy: user.uid,
       invitedAt: Timestamp.now(),
       status: 'pending',
     };
 
-    await updateDoc(docRef, {
+    await updateDoc(projectRef, {
       teamMembers: arrayUnion(newMember),
-      pendingInvites: arrayUnion(email),
+      pendingInvites: arrayUnion(normalizedEmail),
       updatedAt: Timestamp.now(),
     });
 
@@ -177,28 +217,19 @@ export const addTeamMember = async (projectId, email, role = 'member') => {
 
 export const removeTeamMember = async (projectId, memberEmail) => {
   try {
-    const user = getCurrentUser();
-    if (!user) throw new Error('User not authenticated');
+    const { project, projectRef } = await assertProjectAccess(projectId, { ownerOnly: true });
+    const memberToRemove = (project.teamMembers || []).find((member) => member.email === memberEmail);
+    if (!memberToRemove || memberToRemove.role === 'owner') return;
 
-    const docRef = doc(db, 'projects', projectId);
-    const docSnap = await getDoc(docRef);
-    
-    if (!docSnap.exists()) {
-      throw new Error('Project not found');
+    const update = {
+      teamMembers: arrayRemove(memberToRemove),
+      pendingInvites: arrayRemove(memberEmail),
+      updatedAt: Timestamp.now(),
+    };
+    if (memberToRemove.uid && !memberToRemove.uid.startsWith('invite-')) {
+      update.memberIds = arrayRemove(memberToRemove.uid);
     }
-
-    const project = docSnap.data();
-    if (project.ownerId !== user.uid) {
-      throw new Error('Only the project owner can remove team members');
-    }
-
-    const memberToRemove = project.teamMembers.find(m => m.email === memberEmail);
-    if (memberToRemove) {
-      await updateDoc(docRef, {
-        teamMembers: arrayRemove(memberToRemove),
-        updatedAt: Timestamp.now(),
-      });
-    }
+    await updateDoc(projectRef, update);
   } catch (error) {
     throw new Error(error.message);
   }
@@ -206,32 +237,13 @@ export const removeTeamMember = async (projectId, memberEmail) => {
 
 export const updateMemberRole = async (projectId, memberEmail, newRole) => {
   try {
-    const user = getCurrentUser();
-    if (!user) throw new Error('User not authenticated');
-
-    const docRef = doc(db, 'projects', projectId);
-    const docSnap = await getDoc(docRef);
-    
-    if (!docSnap.exists()) {
-      throw new Error('Project not found');
-    }
-
-    const project = docSnap.data();
-    if (project.ownerId !== user.uid) {
-      throw new Error('Only the project owner can change member roles');
-    }
-
-    const updatedMembers = project.teamMembers.map(m => {
-      if (m.email === memberEmail && m.role !== 'owner') {
-        return { ...m, role: newRole };
-      }
-      return m;
+    const { project, projectRef } = await assertProjectAccess(projectId, { ownerOnly: true });
+    const updatedMembers = (project.teamMembers || []).map((member) => {
+      if (member.email === memberEmail && member.role !== 'owner') return { ...member, role: newRole };
+      return member;
     });
 
-    await updateDoc(docRef, {
-      teamMembers: updatedMembers,
-      updatedAt: Timestamp.now(),
-    });
+    await updateDoc(projectRef, { teamMembers: updatedMembers, updatedAt: Timestamp.now() });
   } catch (error) {
     throw new Error(error.message);
   }

@@ -1,135 +1,64 @@
-# AGENTS.md - Project Tracker Development Guide
+# AGENTS.md — OmniAnalytics Development Guide
 
-## Build, Lint, and Test Commands
+## Product direction
 
-| Command           | Description                            |
-| ----------------- | -------------------------------------- |
-| `npm run dev`     | Start Vite development server          |
-| `npm run build`   | Build for production (output to dist/) |
-| `npm run preview` | Preview production build locally       |
-| `npm run test`    | Run all tests with Vitest              |
-| `npm run lint`    | Run ESLint on all JS/TS/JSX/TSX files  |
-| `npm run format`  | Format all files with Prettier         |
+OmniAnalytics is a developer-focused engineering operations workspace. Extend the recovered React application incrementally; do not replace sound React, Vite, React Router, Redux Toolkit, Firebase Authentication, PWA, Electron, or testing infrastructure without a measured reason.
 
-### Running Single Tests
+Build a modular system first. Distribute it only when distribution solves a real problem.
 
-```bash
-# Run a specific test file
-npx vitest run src/__tests__/project.test.js
+## Commands
 
-# Run tests matching a pattern
-npx vitest -t "should fetch user projects"
+| Command | Description |
+| --- | --- |
+| `npm ci` | Install the locked dependency graph |
+| `npm run dev` | Start the Vite development server |
+| `npm run build` | Produce the web build in `dist/` |
+| `npm run preview` | Preview the production web build |
+| `npm run lint` | Run repository-wide ESLint |
+| `npm run test:e2e` | Run Playwright E2E projects |
+| `npm run format` | Format `src/` with Prettier |
+| `npm run electron:dev` | Build and launch the Electron app |
 
-# Run with coverage
-npx vitest run --coverage
-```
+Install Playwright browser binaries with `npx playwright install` before the first E2E run. Recovered tests under `src/__tests__/` retain known legacy debt and are not currently attached to a package script.
 
-### Test Configuration
+## Application conventions
 
-- Vitest uses `vitest.config.js` with jsdom environment
-- Global test utilities available via `setupTests.js`
-- Coverage provider: v8 (reports in text/html/json)
-- Tests are in `src/__tests__/` directory with `.test.js` extension
+- Use React function components and hooks.
+- Keep routing in React Router and cross-page application state in Redux Toolkit where it is already appropriate.
+- Keep Firebase reads, writes, authorization preconditions, and aggregate maintenance in services rather than page components.
+- Keep controller/service/repository/types/routes boundaries explicit as modules grow.
+- Avoid microservices or workers until measured runtime or operational needs justify them.
+- Represent unavailable provider data honestly; do not fabricate activity, health, repository, issue, build, deployment, or release records.
+- AI-generated content and AI integrations are out of scope.
 
-## Code Style Guidelines
+## UI and accessibility
 
-### Formatting (Prettier)
+- Use semantic tokens from `src/styles/tokens.css`; do not add one-off theme colors when an existing semantic token fits.
+- Maintain structural layouts for mobile, tablet, desktop, and wide desktop breakpoints.
+- Preserve keyboard access, visible focus, reduced-motion handling, safe-area spacing, adequate contrast, and touch targets.
+- Use the shared `Icon`, `BrandMark`, and shell patterns.
+- Unsupported controls must be disabled or clearly labeled preview/internal; do not ship dead controls.
 
-```json
-{
-  "semi": true,
-  "trailingComma": "es5",
-  "singleQuote": true,
-  "printWidth": 80,
-  "tabWidth": 2,
-  "useTabs": false,
-  "bracketSpacing": true,
-  "arrowParens": "always"
-}
-```
+## Firebase and security
 
-### ESLint Rules
+- Every project or task operation must enforce explicit ownership or membership, not authentication alone.
+- Keep access logic consistent with `firestore.rules` and the service-level authorization checks.
+- Pending invitation records do not grant access until resolved to authenticated UIDs in `memberIds`.
+- Do not render, log, commit, or expose integration credentials, Firebase secrets, database credentials, or tokens.
+- Use Firestore timestamps and atomic batches/transactions for related writes.
+- Emulator-test rule changes before production deployment.
 
-- `no-console`: **warn** - Avoid console.log in production code
-- `no-debugger`: **error** - Never commit debugger statements
-- `no-unused-vars`: **warn** - Remove unused variables
+## Code quality
 
-### TypeScript Configuration
+- Match the existing formatting: two-space indentation, semicolons, single quotes, trailing commas where supported.
+- Remove unused imports and dead code rather than suppressing findings without cause.
+- Catch errors at service or interaction boundaries and show actionable UI states.
+- Add focused E2E coverage for user-visible behavior and responsive regressions.
+- Measure performance before changing bundle or query architecture.
 
-- `strict: true` - Enable all strict type-checking options
-- `moduleResolution: "bundler"` - Use bundler module resolution
-- Paths: `@/*` maps to `./src/*`
-- Target: ES2020, Module: ESNext
+## Git workflow
 
-### Imports Ordering
-
-1. Firebase/firestore imports first
-2. Third-party library imports (Chart.js, etc.)
-3. Local imports from `./` and `../`
-
-```javascript
-import { doc, getDoc } from 'firebase/firestore';
-import { Chart } from 'chart.js';
-import { getUserProjects } from './project.js';
-```
-
-### Naming Conventions
-
-| Type         | Convention              | Example                                |
-| ------------ | ----------------------- | -------------------------------------- |
-| Functions    | camelCase               | `showDashboard()`, `getUserProjects()` |
-| Variables    | camelCase               | `currentProject`, `countdownInterval`  |
-| Constants    | SCREAMING_SNAKE_CASE    | `FREE_TIER_LIMIT_REACHED`              |
-| DOM Elements | Descriptive with suffix | `projectsList`, `logoutBtn`            |
-
-### Error Handling
-
-Wrap async operations in try/catch blocks. Log errors with `console.error()` and rethrow:
-
-```javascript
-async function getUserProjects(uid) {
-  try {
-    const projectsCol = collection(db, 'users', uid, 'projects');
-    const snapshot = await getDocs(projectsCol);
-    return snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-  } catch (error) {
-    console.error('Error getting user projects:', error);
-    throw error;
-  }
-}
-```
-
-### DOM Manipulation
-
-Always check if elements exist before accessing them:
-
-```javascript
-const projectsList = document.getElementById('projectsList');
-if (!projectsList) return;
-```
-
-### Async/Await Pattern
-
-Use async/await for all asynchronous operations. Avoid raw promises when possible.
-
-### Firebase Data Patterns
-
-- Use `serverTimestamp()` for created/updated timestamps
-- Handle `doc.exists()` checks for document reads
-- Use Firestore increment for counter fields
-- Structure: `users/{uid}/projects/{projectId}/logs/{logId}`
-
-### Component Structure
-
-1. Import statements at top
-2. Module-level variables/constants
-3. Private helper functions
-4. Public export functions
-5. Event listeners at bottom (or in initialization)
-
-### Git Workflow
-
-- Create feature branches from main
-- Run `npm run lint` and `npm run test` before committing
-- Use conventional commit messages
-- Never commit `.env` files or secrets
+- Work on a feature or fix branch; never make significant product changes directly on `main`.
+- Review `git diff --check`, focused lint, the production build, and applicable tests before committing.
+- Keep environment files, generated reports, browser binaries, package outputs, and secrets out of Git.
+- Use pull requests and preview review before merging or reconnecting any production deployment.

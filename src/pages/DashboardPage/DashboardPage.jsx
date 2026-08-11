@@ -1,357 +1,346 @@
-import { useState, useEffect } from 'react';
-import { useSelector, useDispatch } from 'react-redux';
+import { useCallback, useEffect, useMemo } from 'react';
+import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { getAllUserProjects } from '../../services/projectService';
-import { setProjects, setLoading } from '../../store/slices/projectSlice';
-import { fetchUserStats } from '../../store/slices/userStatsSlice';
-import { logoutUser } from '../../services/authService';
-import { clearUser } from '../../store/slices/authSlice';
-import RewardsDisplay from '../../components/RewardsDisplay';
-import FestiveBanner from '../../components/FestiveBanner';
-import ProjectCountdown from '../../components/ProjectCountdown';
+import { getProjectTaskCount } from '../../services/taskService';
+import { setError, setLoading, setProjects } from '../../store/slices/projectSlice';
+import Icon from '../../components/Icon';
 import './DashboardPage.css';
 
-const ProjectCard = ({ project, viewMode, onClick }) => {
-  return (
-    <div
-      className={`project-card project-card-${viewMode}`}
-      onClick={onClick}
-    >
-      <div className="project-header">
-        <h3>{project.name}</h3>
-        <span className={`status-badge status-${project.status}`}>
-          {project.status}
-        </span>
-      </div>
-      <p className="project-description">
-        {project.description || 'No description'}
-      </p>
-      {project.dueDate && (
-        <ProjectCountdown dueDate={project.dueDate} size="small" />
-      )}
-      <div className="project-footer">
-        <span>{project.taskCount || 0} tasks</span>
-        <span>{project.teamMembers?.length || 1} members</span>
-        {project.priority && (
-          <span className={`priority-badge priority-${project.priority}`}>
-            {project.priority}
-          </span>
-        )}
-      </div>
-      {project.progress !== undefined && (
-        <div className="project-progress">
-          <div className="progress-bar">
-            <div 
-              className="progress-fill" 
-              style={{ width: `${project.progress}%` }}
-            ></div>
-          </div>
-          <span className="progress-text">{project.progress}%</span>
-        </div>
-      )}
-    </div>
-  );
+const formatRelativeDate = (value) => {
+  if (!value) return 'Update time unavailable';
+  const date = value.toDate ? value.toDate() : new Date(value);
+  if (Number.isNaN(date.getTime())) return 'Update time unavailable';
+
+  const minutes = Math.floor((Date.now() - date.getTime()) / 60000);
+  if (minutes < 1) return 'Updated just now';
+  if (minutes < 60) return `Updated ${minutes}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `Updated ${hours}h ago`;
+  const days = Math.floor(hours / 24);
+  return `Updated ${days}d ago`;
 };
 
-function DashboardPage({ user }) {
-  const navigate = useNavigate();
-  const dispatch = useDispatch();
-  const { projects, loading } = useSelector(state => state.projects);
-  const { totalXP, currentLevel, currentStreak } = useSelector(state => state.userStats);
-  const [stats, setStats] = useState({
-    totalProjects: 0,
-    activeProjects: 0,
-    completedProjects: 0,
-  });
-  const [groupBy, setGroupBy] = useState('status');
-  const [sortBy, setSortBy] = useState('name');
-  const [viewMode, setViewMode] = useState('grid');
-  const [theme, setTheme] = useState('light');
-  const [showWidgets, setShowWidgets] = useState({
-    stats: true,
-    rewards: true,
-    quickActions: true,
-    recentActivity: true
-  });
-  const [showCustomization, setShowCustomization] = useState(false);
-  const [filters, setFilters] = useState({
-    status: '',
-    priority: '',
-    category: '',
-    search: '',
-    dateRange: ''
-  });
+const getProjectProgress = (project) => {
+  if (project.status === 'completed') return 100;
+  if (typeof project.progress === 'number') return Math.min(100, Math.max(0, project.progress));
+  return 0;
+};
 
-  useEffect(() => {
-    fetchProjects();
-    if (user?.uid) {
-      dispatch(fetchUserStats(user.uid));
-    }
-  }, [user?.uid, dispatch]);
-
-  const fetchProjects = async () => {
-    if (!user?.uid) return;
-    dispatch(setLoading(true));
-    try {
-      const userProjects = await getAllUserProjects();
-      dispatch(setProjects(userProjects));
-      setStats({
-        totalProjects: userProjects.length,
-        activeProjects: userProjects.filter(p => p.status === 'active').length,
-        completedProjects: userProjects.filter(p => p.status === 'completed').length,
-      });
-    } catch (error) {
-      console.error('Failed to fetch projects:', error);
-    } finally {
-      dispatch(setLoading(false));
-    }
-  };
-
-  const groupProjects = (projectsToGroup) => {
-    const groups = {};
-    projectsToGroup.forEach(project => {
-      let groupKey;
-      switch (groupBy) {
-        case 'status':
-          groupKey = project.status || 'unknown';
-          break;
-        case 'priority':
-          groupKey = project.priority || 'medium';
-          break;
-        case 'category':
-          groupKey = project.category || 'general';
-          break;
-        default:
-          groupKey = 'all';
-      }
-      if (!groups[groupKey]) groups[groupKey] = [];
-      groups[groupKey].push(project);
-    });
-    return groups;
-  };
-
-  const getFilteredProjects = () => {
-    let filtered = [...projects];
-    if (filters.status) {
-      filtered = filtered.filter(p => p.status === filters.status);
-    }
-    if (filters.priority) {
-      filtered = filtered.filter(p => p.priority === filters.priority);
-    }
-    if (filters.category) {
-      filtered = filtered.filter(p => p.category === filters.category);
-    }
-    if (filters.search) {
-      const search = filters.search.toLowerCase();
-      filtered = filtered.filter(p => 
-        p.name?.toLowerCase().includes(search) || 
-        p.description?.toLowerCase().includes(search)
-      );
-    }
-    return filtered;
-  };
-
-  const getGroupDisplayName = (key) => {
-    const names = {
-      active: 'Active Projects',
-      completed: 'Completed Projects',
-      on_hold: 'On Hold',
-      cancelled: 'Cancelled',
-      high: 'High Priority',
-      medium: 'Medium Priority',
-      low: 'Low Priority',
-      work: 'Work',
-      personal: 'Personal',
-      education: 'Education',
-      health: 'Health',
-      finance: 'Finance',
-      all: 'All Projects'
-    };
-    return names[key] || key;
-  };
-
-  const updateFilter = (key, value) => {
-    setFilters(prev => ({ ...prev, [key]: value }));
-  };
-
-  const clearFilters = () => {
-    setFilters({ status: '', priority: '', category: '', search: '', dateRange: '' });
-  };
-
-  const applyTheme = (newTheme) => {
-    setTheme(newTheme);
-    document.body.className = document.body.className.replace(/theme-\w+/g, '');
-    document.body.classList.add(`theme-${newTheme}`);
-    localStorage.setItem('dashboard-theme', newTheme);
-  };
-
-  const handleLogout = async () => {
-    await logoutUser();
-    dispatch(clearUser());
-    navigate('/login');
-  };
-
+function MetricCard({ icon, label, value, detail, tone = 'brand', action, onClick }) {
   return (
-    <div className="dashboard-container">
-      <div className="dashboard-header">
-        <div className="header-content">
-          <h1>Fairytale</h1>
-          <div className="user-info">
-            <button 
-              onClick={() => setShowCustomization(!showCustomization)}
-              className="customize-btn"
-              title="Customize Workspace"
-            >
-              ⚙️
-            </button>
-            <span className="user-name" onClick={() => navigate('/profile')}>{user?.displayName || 'User'}</span>
-            <button onClick={handleLogout} className="logout-btn">Logout</button>
-          </div>
-        </div>
-        
-        {showCustomization && (
-          <div className="customization-panel">
-            <div className="customization-section">
-              <h4>Theme</h4>
-              <div className="theme-options">
-                <button onClick={() => applyTheme('light')} className={`theme-btn ${theme === 'light' ? 'active' : ''}`}>Light</button>
-                <button onClick={() => applyTheme('dark')} className={`theme-btn ${theme === 'dark' ? 'active' : ''}`}>Dark</button>
-                <button onClick={() => applyTheme('colorful')} className={`theme-btn ${theme === 'colorful' ? 'active' : ''}`}>Colorful</button>
-              </div>
-            </div>
-            <div className="customization-section">
-              <h4>View</h4>
-              <div className="view-options">
-                <button onClick={() => setViewMode('grid')} className={`view-btn ${viewMode === 'grid' ? 'active' : ''}`}>Grid</button>
-                <button onClick={() => setViewMode('list')} className={`view-btn ${viewMode === 'list' ? 'active' : ''}`}>List</button>
-              </div>
-            </div>
-          </div>
-        )}
-      </div>
+    <button className="overview-metric" onClick={onClick} type="button">
+      <span className={`overview-metric__icon overview-metric__icon--${tone}`}>
+        <Icon name={icon} size={18} />
+      </span>
+      <span className="overview-metric__body">
+        <span className="overview-metric__label">{label}</span>
+        <strong className={value === '—' ? 'is-empty' : ''}>{value}</strong>
+        <span className="overview-metric__detail">{detail}</span>
+      </span>
+      <span className="overview-metric__action">{action}<Icon name="chevronRight" size={14} /></span>
+    </button>
+  );
+}
 
-      <FestiveBanner />
-
-      <div className="dashboard-content">
-        <div className="dashboard-main">
-          <div className="welcome-section">
-            <h2>Welcome, {user?.displayName || 'User'}! 👋</h2>
-            <p>Here's what's happening with your projects today.</p>
-          </div>
-
-          {showWidgets.stats && (
-            <div className="quick-stats">
-              <div className="quick-stat">
-                <span className="quick-stat-value">{currentStreak}</span>
-                <span className="quick-stat-label">Streak</span>
-              </div>
-              <div className="quick-stat">
-                <span className="quick-stat-value">{currentLevel}</span>
-                <span className="quick-stat-label">Level</span>
-              </div>
-              <div className="quick-stat">
-                <span className="quick-stat-value">{totalXP.toLocaleString()}</span>
-                <span className="quick-stat-label">XP</span>
-              </div>
-            </div>
-          )}
-
-          {showWidgets.quickActions && (
-            <div className="quick-actions-widget">
-              <h3>Quick Actions</h3>
-              <button onClick={() => navigate('/projects/new')} className="action-btn">New Project</button>
-              <button onClick={() => navigate('/projects')} className="action-btn">View All</button>
-              <button onClick={() => navigate('/profile')} className="action-btn">Profile</button>
-            </div>
-          )}
-
-          <div className="projects-section">
-            <div className="section-header">
-              <h2>Your Projects</h2>
-              <div className="section-controls">
-                <select value={groupBy} onChange={(e) => setGroupBy(e.target.value)} className="group-select">
-                  <option value="none">No Grouping</option>
-                  <option value="status">Group by Status</option>
-                  <option value="priority">Group by Priority</option>
-                  <option value="category">Group by Category</option>
-                </select>
-                <select value={viewMode} onChange={(e) => setViewMode(e.target.value)} className="view-select">
-                  <option value="grid">Grid View</option>
-                  <option value="list">List View</option>
-                </select>
-              </div>
-            </div>
-
-            <div className="filter-bar">
-              <select value={filters.status} onChange={(e) => updateFilter('status', e.target.value)} className="filter-select">
-                <option value="">All Statuses</option>
-                <option value="active">Active</option>
-                <option value="completed">Completed</option>
-                <option value="on_hold">On Hold</option>
-              </select>
-              <select value={filters.priority} onChange={(e) => updateFilter('priority', e.target.value)} className="filter-select">
-                <option value="">All Priorities</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-              <input type="text" value={filters.search} onChange={(e) => updateFilter('search', e.target.value)} placeholder="Search projects..." className="filter-search" />
-              {(filters.status || filters.priority || filters.search) && (
-                <button onClick={clearFilters} className="filter-clear">Clear Filters</button>
-              )}
-            </div>
-
-            {loading ? (
-              <div className="loading">Loading projects...</div>
-            ) : projects.length === 0 ? (
-              <div className="empty-state">
-                <p>No projects yet. Create your first project to get started!</p>
-                <button className="primary-btn" onClick={() => navigate('/projects')}>Create Project</button>
-              </div>
-            ) : (
-              <div className="projects-container">
-                {groupBy === 'none' ? (
-                  <div className={`projects-${viewMode}`}>
-                    {getFilteredProjects().slice(0, 6).map(project => (
-                      <ProjectCard 
-                        key={project.id} 
-                        project={project} 
-                        viewMode={viewMode}
-                        onClick={() => navigate(`/projects/${project.id}`)}
-                      />
-                    ))}
-                  </div>
-                ) : (
-                  Object.entries(groupProjects(getFilteredProjects())).map(([groupKey, groupProjects]) => (
-                    <div key={groupKey} className="project-group">
-                      <div className="group-header">
-                        <h3>{getGroupDisplayName(groupKey)}</h3>
-                        <span className="group-count">{groupProjects.length} projects</span>
-                      </div>
-                      <div className={`projects-${viewMode}`}>
-                        {groupProjects.slice(0, 3).map(project => (
-                          <ProjectCard 
-                            key={project.id} 
-                            project={project} 
-                            viewMode={viewMode}
-                            onClick={() => navigate(`/projects/${project.id}`)}
-                          />
-                        ))}
-                      </div>
-                    </div>
-                  ))
-                )}
-              </div>
-            )}
-          </div>
-        </div>
-
-        <div className="dashboard-sidebar">
-          {showWidgets.rewards && <RewardsDisplay />}
-        </div>
-      </div>
+function SignalRow({ label, meta, status, tone = 'neutral', last = false }) {
+  return (
+    <div className={`signal-row ${last ? 'signal-row--last' : ''}`}>
+      <span className={`signal-row__status signal-row__status--${tone}`}>
+        <Icon name={tone === 'success' ? 'check' : tone === 'warning' ? 'issue' : 'circle'} size={13} />
+      </span>
+      <span className="signal-row__copy">
+        <strong>{label}</strong>
+        <small>{meta}</small>
+      </span>
+      <span className={`signal-row__result signal-row__result--${tone}`}>{status}</span>
     </div>
   );
 }
 
-export default DashboardPage;
+function EmptyProjects({ onCreate }) {
+  return (
+    <div className="dashboard-empty">
+      <span className="dashboard-empty__icon"><Icon name="projects" size={24} /></span>
+      <h3>Create your first engineering project</h3>
+      <p>Projects connect plans, tasks, repositories, releases, and operational signals in one place.</p>
+      <button className="dashboard-button dashboard-button--primary" onClick={onCreate}>
+        <Icon name="plus" size={16} /> Create project
+      </button>
+    </div>
+  );
+}
+
+export default function DashboardPage({ user }) {
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { projects, loading, error } = useSelector((state) => state.projects);
+
+  const fetchProjects = useCallback(async () => {
+    if (!user?.uid) return;
+    dispatch(setLoading(true));
+    try {
+      const result = await getAllUserProjects();
+      const countResults = await Promise.allSettled(
+        result.map((project) => getProjectTaskCount(project.id))
+      );
+      dispatch(setProjects(result.map((project, index) => ({
+        ...project,
+        taskCount: countResults[index].status === 'fulfilled' ? countResults[index].value : null,
+      }))));
+    } catch (fetchError) {
+      dispatch(setError(fetchError.message || 'Projects could not be loaded'));
+    } finally {
+      dispatch(setLoading(false));
+    }
+  }, [dispatch, user?.uid]);
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
+
+  const stats = useMemo(() => {
+    const active = projects.filter((project) => project.status !== 'completed').length;
+    const countsAvailable = projects.every((project) => typeof project.taskCount === 'number');
+    const tasks = countsAvailable
+      ? projects.reduce((total, project) => total + project.taskCount, 0)
+      : null;
+    const completed = projects.filter((project) => project.status === 'completed').length;
+    return { active, tasks, completed };
+  }, [projects]);
+
+  const recentProjects = useMemo(() => {
+    return [...projects]
+      .sort((a, b) => {
+        const aTime = a.updatedAt?.toMillis?.() || a.createdAt?.toMillis?.() || 0;
+        const bTime = b.updatedAt?.toMillis?.() || b.createdAt?.toMillis?.() || 0;
+        return bTime - aTime;
+      })
+      .slice(0, 4);
+  }, [projects]);
+
+  const today = new Intl.DateTimeFormat('en', {
+    month: 'short',
+    day: 'numeric',
+    year: 'numeric',
+  }).format(new Date());
+
+  const firstName = user?.displayName?.split(' ')[0];
+  const hour = new Date().getHours();
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+
+  return (
+    <div className="engineering-dashboard">
+      <section className="dashboard-heading">
+        <div>
+          <span className="dashboard-heading__date">{today}</span>
+          <h1>{firstName ? `${greeting}, ${firstName}` : 'Engineering overview'}</h1>
+          <p>See what needs attention across your software delivery lifecycle.</p>
+        </div>
+        <div className="dashboard-heading__actions">
+          <button className="dashboard-button" onClick={() => navigate('/repositories')}>
+            <Icon name="branch" size={16} /> Repository setup
+          </button>
+          <button className="dashboard-button dashboard-button--primary" onClick={() => navigate('/projects?create=1')}>
+            <Icon name="plus" size={16} /> New project
+          </button>
+        </div>
+      </section>
+
+      {error && (
+        <div className="dashboard-alert" role="alert">
+          <Icon name="issue" size={17} />
+          <span><strong>We could not refresh your projects.</strong> {error}</span>
+          <button onClick={fetchProjects}>Try again</button>
+        </div>
+      )}
+
+      <section aria-labelledby="overview-metrics-title">
+        <div className="section-kicker">
+          <div>
+            <h2 id="overview-metrics-title">Engineering overview</h2>
+            <span>Live workspace data</span>
+          </div>
+          <span className="date-control"><Icon name="calendar" size={15} /> All project data</span>
+        </div>
+        <div className="overview-metrics">
+          <MetricCard
+            action="View"
+            detail={`${stats.completed} completed`}
+            icon="projects"
+            label="Active projects"
+            onClick={() => navigate('/projects')}
+            tone="brand"
+            value={loading ? '…' : stats.active}
+          />
+          <MetricCard
+            action="Open"
+            detail={stats.tasks === null ? 'Task counts unavailable' : 'Across visible projects'}
+            icon="checkCircle"
+            label="Tracked tasks"
+            onClick={() => navigate('/projects')}
+            tone="blue"
+            value={loading ? '…' : stats.tasks ?? '—'}
+          />
+          <MetricCard
+            action="Set up"
+            detail="Issue source not connected"
+            icon="issue"
+            label="Open issues"
+            onClick={() => navigate('/issues')}
+            tone="amber"
+            value="—"
+          />
+          <MetricCard
+            action="Connect"
+            detail="Repository data required"
+            icon="pullRequest"
+            label="Pull requests"
+            onClick={() => navigate('/repositories')}
+            tone="purple"
+            value="—"
+          />
+          <MetricCard
+            action="Configure"
+            detail="No deployment provider"
+            icon="rocket"
+            label="Deployments"
+            onClick={() => navigate('/cicd')}
+            tone="green"
+            value="—"
+          />
+          <MetricCard
+            action="Add CI"
+            detail="No workflow runs yet"
+            icon="pipeline"
+            label="Build status"
+            onClick={() => navigate('/cicd')}
+            tone="slate"
+            value="—"
+          />
+        </div>
+      </section>
+
+      <div className="dashboard-grid dashboard-grid--primary">
+        <section className="dashboard-panel project-panel">
+          <div className="dashboard-panel__header">
+            <div>
+              <h2>Active projects</h2>
+              <p>Current delivery work and project progress</p>
+            </div>
+            <button className="text-action" onClick={() => navigate('/projects')}>View all <Icon name="arrowRight" size={14} /></button>
+          </div>
+
+          {loading ? (
+            <div className="project-table project-table--loading" aria-label="Loading projects">
+              {[1, 2, 3].map((item) => <div className="dashboard-skeleton" key={item} />)}
+            </div>
+          ) : recentProjects.length === 0 ? (
+            <EmptyProjects onCreate={() => navigate('/projects?create=1')} />
+          ) : (
+            <div className="project-table">
+              <div className="project-table__head">
+                <span>Project</span><span>Status</span><span>Tasks</span><span>Progress</span><span />
+              </div>
+              {recentProjects.map((project) => {
+                const progress = getProjectProgress(project);
+                return (
+                  <button className="project-table__row" key={project.id} onClick={() => navigate(`/projects/${project.id}`)}>
+                    <span className="project-cell">
+                      <span className="project-cell__icon"><Icon name="cube" size={16} /></span>
+                      <span><strong>{project.name}</strong><small>{formatRelativeDate(project.updatedAt || project.createdAt)}</small></span>
+                    </span>
+                    <span><span className={`status-pill status-pill--${project.status || 'active'}`}><i />{(project.status || 'active').replace('_', ' ')}</span></span>
+                    <span className="project-table__tasks">{project.taskCount ?? '—'}</span>
+                    <span className="project-progress-cell">
+                      <span className="project-progress-track"><i style={{ width: `${progress}%` }} /></span>
+                      <small>{progress}%</small>
+                    </span>
+                    <span><Icon name="chevronRight" size={15} /></span>
+                  </button>
+                );
+              })}
+            </div>
+          )}
+        </section>
+
+        <section className="dashboard-panel delivery-panel">
+          <div className="dashboard-panel__header">
+            <div>
+              <h2>Delivery readiness</h2>
+              <p>Signals for your default environment</p>
+            </div>
+            <span className="preview-tag">Setup</span>
+          </div>
+          <div className="readiness-score">
+            <div className="readiness-score__ring"><strong>0</strong><span>/ 4</span></div>
+            <div><strong>Connect delivery signals</strong><p>Add a repository and CI provider to calculate release readiness.</p></div>
+          </div>
+          <div className="signal-list">
+            <SignalRow label="Source" meta="Repository" status="Not connected" />
+            <SignalRow label="Checks" meta="Tests and lint" status="No runs" />
+            <SignalRow label="Security" meta="Dependency scan" status="Not configured" />
+            <SignalRow label="Production" meta="Deployment" status="No provider" last />
+          </div>
+          <button className="dashboard-button dashboard-button--wide" onClick={() => navigate('/repositories')}>
+            Review data connections <Icon name="arrowRight" size={15} />
+          </button>
+        </section>
+      </div>
+
+      <div className="dashboard-grid dashboard-grid--secondary">
+        <section className="dashboard-panel setup-panel">
+          <div className="dashboard-panel__header">
+            <div>
+              <h2>Prepare your workspace</h2>
+              <p>Review the engineering data setup areas</p>
+            </div>
+            <span className="setup-progress">0 of 3</span>
+          </div>
+          <div className="setup-actions">
+            <button onClick={() => navigate('/repositories')}>
+              <span className="setup-actions__number">1</span>
+              <span className="setup-actions__icon"><Icon name="branch" size={19} /></span>
+              <span><strong>Review repository setup</strong><small>Repository connections are currently in preview</small></span>
+              <Icon name="arrowUpRight" size={16} />
+            </button>
+            <button onClick={() => navigate('/cicd')}>
+              <span className="setup-actions__number">2</span>
+              <span className="setup-actions__icon"><Icon name="pipeline" size={19} /></span>
+              <span><strong>Review CI/CD setup</strong><small>Provider connections are not enabled yet</small></span>
+              <Icon name="arrowUpRight" size={16} />
+            </button>
+            <button onClick={() => navigate('/security')}>
+              <span className="setup-actions__number">3</span>
+              <span className="setup-actions__icon"><Icon name="shield" size={19} /></span>
+              <span><strong>Preview security posture</strong><small>Scanning signals require a future connection</small></span>
+              <Icon name="arrowUpRight" size={16} />
+            </button>
+          </div>
+        </section>
+
+        <section className="dashboard-panel activity-panel">
+          <div className="dashboard-panel__header">
+            <div>
+              <h2>Recent activity</h2>
+              <p>Changes across this workspace</p>
+            </div>
+          </div>
+          <div className="activity-list">
+            {recentProjects.length ? recentProjects.slice(0, 3).map((project) => (
+              <button key={project.id} onClick={() => navigate(`/projects/${project.id}`)}>
+                <span className="activity-list__icon activity-list__icon--purple"><Icon name="projects" size={16} /></span>
+                <span><strong>Project record</strong><p>{project.name}</p><small>{formatRelativeDate(project.updatedAt || project.createdAt)}</small></span>
+              </button>
+            )) : (
+              <div className="activity-list__empty">
+                <span><Icon name="clock" size={20} /></span>
+                <p>Project record changes will appear here.</p>
+              </div>
+            )}
+          </div>
+        </section>
+      </div>
+    </div>
+  );
+}

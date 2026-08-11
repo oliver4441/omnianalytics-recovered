@@ -1,226 +1,274 @@
-import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useCallback, useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
-import { getAllUserProjects, createProject, deleteProject } from '../../services/projectService';
-import { setProjects, addProject, removeProject, setLoading } from '../../store/slices/projectSlice';
-import Countdown from '../../components/Countdown';
+import { useNavigate, useSearchParams } from 'react-router-dom';
+import { createProject, deleteProject, getAllUserProjects } from '../../services/projectService';
+import { getProjectTaskCount } from '../../services/taskService';
+import { addProject, removeProject, setLoading, setProjects } from '../../store/slices/projectSlice';
+import Icon from '../../components/Icon';
 import './ProjectsPage.css';
 
-function ProjectsPage() {
+export default function ProjectsPage() {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const dispatch = useDispatch();
-  const { projects, loading } = useSelector(state => state.projects);
-  const [showModal, setShowModal] = useState(false);
+  const { projects, loading } = useSelector((state) => state.projects);
+  const currentUser = useSelector((state) => state.auth.user);
+  const [showModal, setShowModal] = useState(() => searchParams.get('create') === '1');
   const [newProject, setNewProject] = useState({ name: '', description: '', dueDate: '' });
-  const [error, setError] = useState('');
+  const [formError, setFormError] = useState('');
+  const [loadError, setLoadError] = useState('');
   const [creating, setCreating] = useState(false);
 
-  useEffect(() => {
-    fetchProjects();
-  }, []);
-
-  const fetchProjects = async () => {
+  const fetchProjects = useCallback(async () => {
     dispatch(setLoading(true));
+    setLoadError('');
     try {
       const userProjects = await getAllUserProjects();
-      dispatch(setProjects(userProjects));
+      const countResults = await Promise.allSettled(
+        userProjects.map((project) => getProjectTaskCount(project.id)),
+      );
+      dispatch(setProjects(userProjects.map((project, index) => ({
+        ...project,
+        taskCount: countResults[index].status === 'fulfilled' ? countResults[index].value : null,
+      }))));
     } catch (error) {
-      console.error('Failed to fetch projects:', error);
+      setLoadError(error.message || 'Projects could not be loaded.');
     } finally {
       dispatch(setLoading(false));
     }
+  }, [dispatch]);
+
+  useEffect(() => {
+    fetchProjects();
+  }, [fetchProjects]);
+
+  useEffect(() => {
+    if (searchParams.get('create') === '1') setShowModal(true);
+  }, [searchParams]);
+
+  const openCreateModal = () => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.set('create', '1');
+    setSearchParams(nextParams, { replace: true });
+    setShowModal(true);
   };
 
-  const handleCreateProject = async (e) => {
-    e.preventDefault();
-    setError('');
+  const closeCreateModal = useCallback(() => {
+    const nextParams = new URLSearchParams(searchParams);
+    nextParams.delete('create');
+    setSearchParams(nextParams, { replace: true });
+    setShowModal(false);
+    setFormError('');
+  }, [searchParams, setSearchParams]);
+
+  useEffect(() => {
+    if (!showModal) return undefined;
+    const closeOnEscape = (event) => {
+      if (event.key === 'Escape') closeCreateModal();
+    };
+    window.addEventListener('keydown', closeOnEscape);
+    return () => window.removeEventListener('keydown', closeOnEscape);
+  }, [closeCreateModal, showModal]);
+
+  const handleCreateProject = async (event) => {
+    event.preventDefault();
+    setFormError('');
     setCreating(true);
 
     try {
       if (!newProject.name.trim()) {
-        setError('Project name is required');
+        setFormError('Project name is required.');
         return;
       }
 
       const projectId = await createProject({
-        name: newProject.name,
-        description: newProject.description,
+        name: newProject.name.trim(),
+        description: newProject.description.trim(),
         dueDate: newProject.dueDate || null,
       });
 
-      const newProjectData = {
+      dispatch(addProject({
         id: projectId,
-        name: newProject.name,
-        description: newProject.description,
+        name: newProject.name.trim(),
+        description: newProject.description.trim(),
         dueDate: newProject.dueDate || null,
         status: 'active',
-        memberCount: 1,
+        ownerId: currentUser?.uid,
+        memberIds: currentUser?.uid ? [currentUser.uid] : [],
+        teamMembers: currentUser ? [currentUser] : [],
         taskCount: 0,
-      };
-
-      dispatch(addProject(newProjectData));
-      setShowModal(false);
+      }));
+      closeCreateModal();
       setNewProject({ name: '', description: '', dueDate: '' });
       navigate(`/projects/${projectId}`);
     } catch (error) {
-      setError(error.message || 'Failed to create project');
+      setFormError(error.message || 'Project could not be created.');
     } finally {
       setCreating(false);
     }
   };
 
-  const handleDeleteProject = async (projectId, e) => {
-    e.stopPropagation();
-    if (window.confirm('Are you sure you want to delete this project?')) {
-      try {
-        await deleteProject(projectId);
-        dispatch(removeProject(projectId));
-      } catch (error) {
-        console.error('Failed to delete project:', error);
-      }
+  const handleDeleteProject = async (project) => {
+    if (!window.confirm(`Delete “${project.name}”? This action cannot be undone.`)) return;
+    try {
+      await deleteProject(project.id);
+      dispatch(removeProject(project.id));
+    } catch (error) {
+      setLoadError(error.message || 'Project could not be deleted.');
     }
-  };
-
-  const isCountdownExpired = (dueDate) => {
-    if (!dueDate) return false;
-    return new Date(dueDate).getTime() < Date.now();
   };
 
   const formatDate = (dateString) => {
     if (!dateString) return '';
     const date = new Date(dateString);
-    return date.toLocaleDateString('en-US', {
-      month: 'short',
-      day: 'numeric',
-      year: 'numeric',
-    });
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
   };
 
   return (
-    <div className="projects-container">
-      <div className="projects-header">
-        <div className="header-left">
-          <button className="back-btn" onClick={() => navigate('/dashboard')}>
-            ← Back
-          </button>
+    <div className="projects-page">
+      <header className="projects-heading">
+        <div>
+          <span className="projects-heading__eyebrow">Plan and coordinate</span>
           <h1>Projects</h1>
+          <p>Connect delivery work, tasks, contributors, and engineering signals.</p>
         </div>
-        <button className="create-btn" onClick={() => setShowModal(true)}>
-          + New Project
+        <button className="projects-primary-action" onClick={openCreateModal}>
+          <Icon name="plus" size={16} /> New project
         </button>
-      </div>
+      </header>
 
-      <div className="projects-content">
-        {loading ? (
-          <div className="loading">Loading projects...</div>
-        ) : projects.length === 0 ? (
-          <div className="empty-state">
-            <div className="empty-icon"></div>
-            <h2>No projects yet</h2>
-            <p>Create your first project to get started</p>
-            <button className="primary-btn" onClick={() => setShowModal(true)}>
-              Create Project
-            </button>
-          </div>
-        ) : (
-          <div className="projects-grid">
-            {projects.map(project => (
-                <div
-                  key={project.id}
-                  className="project-card"
-                  onClick={() => navigate(`/projects/${project.id}`)}
-                >
-                  <div className="project-card-header">
-                    <h3>{project.name}</h3>
-                    <span className={`status-badge status-${project.status}`}>
-                      {project.status}
-                    </span>
-                  </div>
-                  <p className="project-description">
-                    {project.description || 'No description'}
-                  </p>
+      {loadError && (
+        <div className="projects-alert" role="alert">
+          <Icon name="issue" size={17} />
+          <span>{loadError}</span>
+          <button onClick={fetchProjects}>Try again</button>
+        </div>
+      )}
+
+      {loading ? (
+        <div className="projects-loading" role="status">
+          <span className="projects-loading__spinner" />
+          <p>Loading projects…</p>
+        </div>
+      ) : projects.length === 0 ? (
+        <section className="projects-empty">
+          <span className="projects-empty__icon"><Icon name="projects" size={27} /></span>
+          <h2>Create your first project</h2>
+          <p>Start with a real delivery initiative, then add tasks and invite the people who need access.</p>
+          <button className="projects-primary-action" onClick={openCreateModal}>
+            <Icon name="plus" size={16} /> Create project
+          </button>
+        </section>
+      ) : (
+        <section aria-label="Projects" className="projects-grid">
+          {projects.map((project) => {
+            const status = project.status || 'active';
+            const memberCount = project.teamMembers?.length || project.memberIds?.length || 1;
+            const isOwner = !project.ownerId || project.ownerId === currentUser?.uid;
+            return (
+              <article className="project-card" key={project.id}>
+                <button className="project-card__open" onClick={() => navigate(`/projects/${project.id}`)}>
+                  <span className="project-card__topline">
+                    <span className="project-card__mark"><Icon name="cube" size={17} /></span>
+                    <span className={`status-badge status-${status}`}><i />{status.replace('_', ' ')}</span>
+                  </span>
+                  <span className="project-card__copy">
+                    <strong>{project.name}</strong>
+                    <span>{project.description || 'No description provided.'}</span>
+                  </span>
                   {project.dueDate && (
-                    <div className="project-countdown-small">
-                      <Countdown dueDate={project.dueDate} />
-                      <span className="deadline-text">
-                        Deadline: {formatDate(project.dueDate)}
-                      </span>
-                    </div>
+                    <span className="project-card__deadline">
+                      <small><Icon name="calendar" size={13} /> Due {formatDate(project.dueDate)}</small>
+                    </span>
                   )}
-                  <div className="project-meta">
-                    <span>{project.taskCount || 0} tasks</span>
-                    <span>{project.teamMembers?.length || 1} members</span>
-                  </div>
-                  <div className="project-actions">
-                    <button
-                      className="delete-btn"
-                      onClick={(e) => handleDeleteProject(project.id, e)}
-                    >
-                      Delete
+                  <span className="project-card__meta">
+                    <span>
+                      <Icon name="checkCircle" size={14} />
+                      {typeof project.taskCount === 'number'
+                        ? `${project.taskCount} ${project.taskCount === 1 ? 'task' : 'tasks'}`
+                        : 'Tasks unavailable'}
+                    </span>
+                    <span><Icon name="users" size={14} /> {memberCount} {memberCount === 1 ? 'member' : 'members'}</span>
+                    <Icon name="chevronRight" size={15} />
+                  </span>
+                </button>
+                {isOwner && (
+                  <div className="project-card__actions">
+                    <button aria-label={`Delete ${project.name}`} onClick={() => handleDeleteProject(project)}>
+                      Delete project
                     </button>
                   </div>
-                </div>
-            ))}
-          </div>
-        )}
-      </div>
+                )}
+              </article>
+            );
+          })}
+        </section>
+      )}
 
       {showModal && (
-        <div className="modal-overlay" onClick={() => setShowModal(false)}>
-          <div className="modal" onClick={(e) => e.stopPropagation()}>
-            <div className="modal-header">
-              <h2>Create New Project</h2>
-              <button className="close-btn" onClick={() => setShowModal(false)}>
-                ×
-              </button>
-            </div>
-            <form onSubmit={handleCreateProject}>
-              <div className="form-group">
-                <label htmlFor="projectName">Project Name *</label>
-                <input
-                  id="projectName"
-                  type="text"
-                  placeholder="Enter project name"
-                  value={newProject.name}
-                  onChange={(e) => setNewProject({ ...newProject, name: e.target.value })}
-                  required
-                />
+        <div className="project-modal-overlay" onMouseDown={closeCreateModal} role="presentation">
+          <section
+            aria-labelledby="create-project-title"
+            aria-modal="true"
+            className="project-modal"
+            onMouseDown={(event) => event.stopPropagation()}
+            role="dialog"
+          >
+            <header className="project-modal__header">
+              <div>
+                <span>New workspace project</span>
+                <h2 id="create-project-title">Create project</h2>
               </div>
-              <div className="form-group">
-                <label htmlFor="projectDescription">Description</label>
+              <button aria-label="Close create project dialog" onClick={closeCreateModal}>
+                <Icon name="close" size={19} />
+              </button>
+            </header>
+            <form onSubmit={handleCreateProject}>
+              <label className="project-form-field" htmlFor="projectName">
+                <span>Project name <i>Required</i></span>
+                <input
+                  autoFocus
+                  id="projectName"
+                  maxLength={120}
+                  onChange={(event) => setNewProject({ ...newProject, name: event.target.value })}
+                  placeholder="Payments reliability"
+                  required
+                  type="text"
+                  value={newProject.name}
+                />
+              </label>
+              <label className="project-form-field" htmlFor="projectDescription">
+                <span>Description</span>
                 <textarea
                   id="projectDescription"
-                  placeholder="Describe your project"
-                  value={newProject.description}
-                  onChange={(e) => setNewProject({ ...newProject, description: e.target.value })}
+                  maxLength={500}
+                  onChange={(event) => setNewProject({ ...newProject, description: event.target.value })}
+                  placeholder="What outcome is this project responsible for?"
                   rows="4"
+                  value={newProject.description}
                 />
-              </div>
-              <div className="form-group">
-                <label htmlFor="projectDueDate">Deadline (Optional)</label>
+              </label>
+              <label className="project-form-field" htmlFor="projectDueDate">
+                <span>Target date <i>Optional</i></span>
                 <input
                   id="projectDueDate"
+                  min={new Date().toISOString().slice(0, 16)}
+                  onChange={(event) => setNewProject({ ...newProject, dueDate: event.target.value })}
                   type="datetime-local"
                   value={newProject.dueDate}
-                  onChange={(e) => setNewProject({ ...newProject, dueDate: e.target.value })}
-                  min={new Date().toISOString().slice(0, 16)}
                 />
-              </div>
-              {error && <div className="error-message">{error}</div>}
-              <div className="modal-actions">
-                <button type="button" className="cancel-btn" onClick={() => setShowModal(false)}>
-                  Cancel
+              </label>
+              {formError && <div className="project-form-error" role="alert"><Icon name="issue" size={15} /> {formError}</div>}
+              <footer className="project-modal__actions">
+                <button className="project-modal__cancel" onClick={closeCreateModal} type="button">Cancel</button>
+                <button className="projects-primary-action" disabled={creating} type="submit">
+                  {creating ? 'Creating…' : <><Icon name="plus" size={15} /> Create project</>}
                 </button>
-                <button type="submit" className="submit-btn" disabled={creating}>
-                  {creating ? 'Creating...' : 'Create Project'}
-                </button>
-              </div>
+              </footer>
             </form>
-          </div>
+          </section>
         </div>
       )}
     </div>
   );
 }
-
-export default ProjectsPage;
