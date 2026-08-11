@@ -201,7 +201,12 @@ export const findConnectionPath = (dataset, sourceId, targetId) => {
 
   while (queue.length) {
     const current = queue.shift();
-    for (const edge of adjacency.get(current.resourceId) || []) {
+    const edges = [...(adjacency.get(current.resourceId) || [])]
+      .sort((left, right) => (
+        String(left.resource?.id || '').localeCompare(String(right.resource?.id || ''))
+        || String(left.connection?.id || '').localeCompare(String(right.connection?.id || ''))
+      ));
+    for (const edge of edges) {
       if (!edge.resource || visited.has(edge.resource.id)) continue;
       const next = {
         resourceId: edge.resource.id,
@@ -219,11 +224,72 @@ export const findConnectionPath = (dataset, sourceId, targetId) => {
   return null;
 };
 
+export const discoverRelatedResources = (dataset, sourceId, options = {}) => {
+  const { adjacency } = buildRelationshipIndex(dataset);
+  if (!adjacency.has(sourceId)) return [];
+
+  const targetTypes = new Set(Array.isArray(options.targetTypes) ? options.targetTypes : []);
+  const terminalRelationshipTypes = new Set(
+    Array.isArray(options.terminalRelationshipTypes) ? options.terminalRelationshipTypes : [],
+  );
+  const maximumDepth = Math.min(8, Math.max(1, Number(options.maxDepth) || 4));
+  const maximumResults = Math.min(100, Math.max(1, Number(options.maxResults) || 25));
+  const queue = [{ resourceId: sourceId, resources: [sourceId], connections: [], depth: 0 }];
+  const visited = new Set([sourceId]);
+  const matched = new Set();
+  const results = [];
+
+  while (queue.length && results.length < maximumResults) {
+    const current = queue.shift();
+    if (current.depth >= maximumDepth) continue;
+    const edges = [...(adjacency.get(current.resourceId) || [])]
+      .sort((left, right) => (
+        String(left.resource?.id || '').localeCompare(String(right.resource?.id || ''))
+        || String(left.connection?.id || '').localeCompare(String(right.connection?.id || ''))
+      ));
+
+    edges.forEach((edge) => {
+      if (!edge.resource || current.resources.includes(edge.resource.id)) return;
+      const next = {
+        resourceId: edge.resource.id,
+        resources: [...current.resources, edge.resource.id],
+        connections: [...current.connections, edge.connection.id],
+        depth: current.depth + 1,
+      };
+      const resourceTypeMatches = !targetTypes.size || targetTypes.has(edge.resource.type);
+      const terminalRelationshipMatches = !terminalRelationshipTypes.size
+        || terminalRelationshipTypes.has(edge.connection.relationshipType);
+      if (resourceTypeMatches && terminalRelationshipMatches && !matched.has(edge.resource.id)) {
+        matched.add(edge.resource.id);
+        results.push({
+          resource: edge.resource,
+          resources: next.resources,
+          connections: next.connections,
+          depth: next.depth,
+        });
+      }
+      if (visited.has(edge.resource.id)) return;
+      visited.add(edge.resource.id);
+      if (next.depth < maximumDepth) queue.push(next);
+    });
+  }
+
+  return results
+    .slice(0, maximumResults)
+    .sort((left, right) => (
+      left.depth - right.depth
+      || left.resource.provider.localeCompare(right.resource.provider)
+      || left.resource.name.localeCompare(right.resource.name)
+      || left.resource.id.localeCompare(right.resource.id)
+    ));
+};
+
 export const filterIntegrationDataset = (dataset, filters = {}) => {
   const search = normalizeText(filters.search);
   const provider = normalizeText(filters.provider);
   const resourceType = normalizeText(filters.resourceType);
   const status = normalizeText(filters.status);
+  const attentionStatuses = new Set(['degraded', 'expired', 'disconnected', 'error']);
 
   const resources = dataset.resources.filter((resource) => {
     const searchable = [
@@ -239,7 +305,7 @@ export const filterIntegrationDataset = (dataset, filters = {}) => {
     return (!search || searchable.includes(search))
       && (!provider || resource.provider === provider)
       && (!resourceType || resource.type === resourceType)
-      && (!status || resource.status === status);
+      && (!status || (status === 'attention' ? attentionStatuses.has(resource.status) : resource.status === status));
   });
 
   const visibleIds = new Set(resources.map((resource) => resource.id));

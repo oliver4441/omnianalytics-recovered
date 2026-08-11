@@ -22,6 +22,17 @@ const typeRank = {
   unknown: 6,
 };
 
+const healthSymbol = {
+  connected: '✓',
+  synchronizing: '↻',
+  healthy: '✓',
+  degraded: '!',
+  expired: '!',
+  disconnected: '×',
+  error: '!',
+  unknown: '?',
+};
+
 const typeIcon = {
   account: 'users',
   repository: 'branch',
@@ -120,13 +131,37 @@ export default function RelationshipGraph({
   const [view, setView] = useState({ x: 40, y: 40, scale: 1 });
   const [drag, setDrag] = useState(null);
   const [collapsedProviders, setCollapsedProviders] = useState(new Set());
-  const providers = useMemo(
+  const [hiddenProviders, setHiddenProviders] = useState(new Set());
+  const [hiddenResourceTypes, setHiddenResourceTypes] = useState(new Set());
+  const [visibilityOpen, setVisibilityOpen] = useState(false);
+  const availableProviders = useMemo(
     () => [...new Set(dataset.resources.map((resource) => resource.provider))].sort(),
     [dataset.resources],
   );
+  const availableResourceTypes = useMemo(
+    () => [...new Set(dataset.resources.map((resource) => resource.type))].sort(),
+    [dataset.resources],
+  );
+  const visibleDataset = useMemo(() => {
+    const resources = dataset.resources.filter((resource) => (
+      !hiddenProviders.has(resource.provider) && !hiddenResourceTypes.has(resource.type)
+    ));
+    const resourceIds = new Set(resources.map((resource) => resource.id));
+    return {
+      ...dataset,
+      resources,
+      connections: dataset.connections.filter((connection) => (
+        resourceIds.has(connection.sourceResourceId) && resourceIds.has(connection.targetResourceId)
+      )),
+    };
+  }, [dataset, hiddenProviders, hiddenResourceTypes]);
+  const providers = useMemo(
+    () => [...new Set(visibleDataset.resources.map((resource) => resource.provider))].sort(),
+    [visibleDataset.resources],
+  );
   const graphDataset = useMemo(
-    () => collapseDataset(dataset, groupByProvider ? collapsedProviders : emptyProviderSet),
-    [collapsedProviders, dataset, groupByProvider],
+    () => collapseDataset(visibleDataset, groupByProvider ? collapsedProviders : emptyProviderSet),
+    [collapsedProviders, groupByProvider, visibleDataset],
   );
 
   const fitPositions = (positionSet) => {
@@ -162,6 +197,12 @@ export default function RelationshipGraph({
   };
 
   const fitToScreen = () => fitPositions(positions);
+  const resetLayout = () => {
+    const automaticPositions = getAutomaticPositions(graphDataset.resources);
+    setPositions(automaticPositions);
+    fitPositions(automaticPositions);
+    centerResource(focusedResourceId, automaticPositions);
+  };
 
   useEffect(() => {
     const automaticPositions = getAutomaticPositions(graphDataset.resources);
@@ -268,6 +309,20 @@ export default function RelationshipGraph({
     });
   };
 
+  const toggleHiddenValue = (setter, value) => setter((current) => {
+    const next = new Set(current);
+    if (next.has(value)) next.delete(value);
+    else next.add(value);
+    return next;
+  });
+
+  const showAllResources = () => {
+    setHiddenProviders(new Set());
+    setHiddenResourceTypes(new Set());
+  };
+
+  const expandProviderGroups = () => setCollapsedProviders(new Set());
+
   const providerBounds = useMemo(() => {
     if (!groupByProvider) return [];
     return providers.flatMap((provider) => {
@@ -284,10 +339,18 @@ export default function RelationshipGraph({
 
   if (!graphDataset.resources.length) {
     return (
-      <div className="integration-empty integration-empty--graph">
-        <span><Icon name="graph" size={24} /></span>
-        <h3>No resources match these filters</h3>
-        <p>Clear one or more filters to restore the relationship graph.</p>
+      <div className="relationship-graph">
+        <div className="integration-empty integration-empty--graph">
+          <span><Icon name="graph" size={24} /></span>
+          <h3>No resources are visible</h3>
+          <p>Clear page filters or restore graph visibility to continue exploring.</p>
+          {(hiddenProviders.size > 0 || hiddenResourceTypes.size > 0) && (
+            <button onClick={showAllResources}><Icon name="refresh" size={14} /> Show all graph resources</button>
+          )}
+          {collapsedProviders.size > 0 && (
+            <button onClick={expandProviderGroups}><Icon name="layers" size={14} /> Expand provider groups</button>
+          )}
+        </div>
       </div>
     );
   }
@@ -298,7 +361,45 @@ export default function RelationshipGraph({
         <button aria-label="Zoom in" onClick={() => zoom(1.2)}><Icon name="plus" size={16} /></button>
         <button aria-label="Zoom out" onClick={() => zoom(0.8)}><span aria-hidden="true">−</span></button>
         <button onClick={fitToScreen}><Icon name="maximize" size={15} /> Fit</button>
-        <button onClick={() => setPositions(getAutomaticPositions(graphDataset.resources))}><Icon name="refresh" size={15} /> Reset layout</button>
+        <button onClick={resetLayout}><Icon name="refresh" size={15} /> Reset layout</button>
+        <div className="graph-visibility">
+          <button aria-controls="graph-visibility-menu" aria-expanded={visibilityOpen} onClick={() => setVisibilityOpen((current) => !current)}>
+            <Icon name="layers" size={15} /> Visibility
+          </button>
+          {visibilityOpen && (
+            <div className="graph-visibility__menu" id="graph-visibility-menu">
+              <fieldset>
+                <legend>Providers</legend>
+                {availableProviders.map((provider) => (
+                  <label key={provider}>
+                    <input
+                      checked={!hiddenProviders.has(provider)}
+                      onChange={() => toggleHiddenValue(setHiddenProviders, provider)}
+                      type="checkbox"
+                    />
+                    <span>{provider}</span>
+                  </label>
+                ))}
+              </fieldset>
+              <fieldset>
+                <legend>Resource types</legend>
+                {availableResourceTypes.map((resourceType) => (
+                  <label key={resourceType}>
+                    <input
+                      checked={!hiddenResourceTypes.has(resourceType)}
+                      onChange={() => toggleHiddenValue(setHiddenResourceTypes, resourceType)}
+                      type="checkbox"
+                    />
+                    <span>{readableLabel(resourceType)}</span>
+                  </label>
+                ))}
+              </fieldset>
+              {(hiddenProviders.size > 0 || hiddenResourceTypes.size > 0) && (
+                <button className="graph-visibility__reset" onClick={showAllResources}>Show all</button>
+              )}
+            </div>
+          )}
+        </div>
       </div>
 
       {groupByProvider && (
@@ -420,16 +521,17 @@ export default function RelationshipGraph({
                 <text className="graph-node__type" x="64" y="65">
                   {resource.type === 'group' ? `${resource.metadata.count} resources · click to expand` : resource.type.replaceAll('_', ' ')}
                 </text>
-                <circle className={`graph-node__health status-${resource.status}`} cx="193" cy="17" r="5" />
+                <circle className={`graph-node__health status-${resource.status}`} cx="193" cy="17" r="8" />
+                <text aria-hidden="true" className="graph-node__health-symbol" x="193" y="20">{healthSymbol[resource.status] || '?'}</text>
               </g>
             );
           })}
         </g>
       </svg>
       <div className="relationship-graph__legend">
-        <span><i className="status-healthy" /> Healthy</span>
-        <span><i className="status-degraded" /> Attention</span>
-        <span><i className="status-unknown" /> Unknown</span>
+        <span><i className="status-healthy">✓</i> Healthy</span>
+        <span><i className="status-degraded">!</i> Attention</span>
+        <span><i className="status-unknown">?</i> Unknown</span>
         <small>Scroll to zoom · drag canvas to pan · drag nodes to arrange</small>
       </div>
     </div>

@@ -47,6 +47,21 @@ const capabilities = {
     eventTypes: ['deployment_completed', 'deployment_failed'],
     actions: ['open_provider'],
   }),
+  supabase: defineCapabilities({
+    resourceTypes: ['account', 'project', 'database', 'storage', 'api', 'environment'],
+    eventTypes: ['deployment_completed', 'database_updated'],
+    actions: ['open_provider'],
+  }),
+  neon: defineCapabilities({
+    resourceTypes: ['account', 'project', 'branch', 'database', 'environment'],
+    eventTypes: ['branch_created', 'database_updated'],
+    actions: ['open_provider'],
+  }),
+  postgresql: defineCapabilities({
+    resourceTypes: ['database'],
+    eventTypes: ['database_updated'],
+    actions: [],
+  }),
   omnianalytics: defineCapabilities({
     resourceTypes: ['project'],
     eventTypes: [],
@@ -61,6 +76,8 @@ const providerHosts = Object.freeze({
   vercel: freezeList(['vercel.com']),
   cloudflare: freezeList(['dash.cloudflare.com']),
   firebase: freezeList(['console.firebase.google.com']),
+  supabase: freezeList(['supabase.com']),
+  neon: freezeList(['console.neon.tech']),
 });
 
 const unknownCapabilities = defineCapabilities({

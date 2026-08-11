@@ -7,6 +7,7 @@ export {
 } from './providers/registry.js';
 export {
   buildRelationshipIndex,
+  discoverRelatedResources,
   filterIntegrationDataset,
   filterIntegrationEvents,
   findConnectionPath,

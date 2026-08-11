@@ -17,6 +17,7 @@ const columns = [
   { id: 'relationship', label: 'Relationship' },
   { id: 'status', label: 'Health' },
   { id: 'verification', label: 'Attribution' },
+  { id: 'lastVerifiedAt', label: 'Last verified' },
   { id: 'updatedAt', label: 'Last updated' },
 ];
 
@@ -26,6 +27,12 @@ const formatDate = (value) => {
   if (Number.isNaN(date.getTime())) return 'Not available';
   return date.toLocaleDateString(undefined, { month: 'short', day: 'numeric', year: 'numeric' });
 };
+
+const getLatestTimestamp = (timestamps) => timestamps.reduce((latest, timestamp) => {
+  const time = new Date(timestamp).getTime();
+  if (!Number.isFinite(time)) return latest;
+  return !latest || time > latest.time ? { time, timestamp } : latest;
+}, null)?.timestamp || null;
 
 export default function ResourceTable({ dataset, onSelectResource, selectedResourceId }) {
   const [sort, setSort] = useState({ column: 'resource', direction: 'asc' });
@@ -49,6 +56,7 @@ export default function ResourceTable({ dataset, onSelectResource, selectedResou
       status: resource.status,
       verification: resource.verificationState,
       source: resource.source,
+      lastVerifiedAt: getLatestTimestamp(edges.map((edge) => edge.connection.lastVerifiedAt)),
       updatedAt: resource.updatedAt,
       raw: resource,
     };
@@ -134,6 +142,7 @@ export default function ResourceTable({ dataset, onSelectResource, selectedResou
         </span>
       );
     }
+    if (columnId === 'lastVerifiedAt') return formatDate(row.lastVerifiedAt);
     if (columnId === 'updatedAt') return formatDate(row.updatedAt);
     if (columnId === 'type') return RESOURCE_LABELS[row.type] || row.type;
     return row[columnId];

@@ -3,7 +3,6 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import Icon from '../../components/Icon';
 import {
   filterIntegrationDataset,
-  findConnectionPath,
   getDatasetFacets,
   getIntegrationDataset,
   normalizeIntegrationDataset,
@@ -11,6 +10,7 @@ import {
 } from '../../modules/integrations';
 import ActivityTimeline from './ActivityTimeline';
 import IntegrationDetailPanel from './IntegrationDetailPanel';
+import RelationshipDiscovery from './RelationshipDiscovery';
 import RelationshipGraph from './RelationshipGraph';
 import ResourceTable from './ResourceTable';
 import './IntegrationExplorerPage.css';
@@ -54,7 +54,6 @@ export default function IntegrationExplorerPage() {
   const [timelineResourceId, setTimelineResourceId] = useState('');
   const [groupByProvider, setGroupByProvider] = useState(true);
   const [discoveryOpen, setDiscoveryOpen] = useState(false);
-  const [trace, setTrace] = useState({ sourceId: '', targetId: '' });
   const [filters, setFilters] = useState({
     search: '',
     provider: '',
@@ -83,8 +82,14 @@ export default function IntegrationExplorerPage() {
   }, []);
 
   useEffect(() => {
-    setFilters((current) => ({ ...current, resourceType: activeSection.type || '' }));
-  }, [activeSection.type]);
+    setFilters((current) => ({
+      ...current,
+      resourceType: activeSection.type || '',
+      status: activeSection.id === 'health'
+        ? 'attention'
+        : current.status === 'attention' ? '' : current.status,
+    }));
+  }, [activeSection.id, activeSection.type]);
 
   useEffect(() => {
     const params = new URLSearchParams(location.search);
@@ -129,17 +134,10 @@ export default function IntegrationExplorerPage() {
     () => filterIntegrationDataset(dataset, filters),
     [dataset, filters],
   );
-  const resourcesById = useMemo(() => new Map(dataset.resources.map((resource) => [resource.id, resource])), [dataset.resources]);
-  const connectionsById = useMemo(() => new Map(dataset.connections.map((connection) => [connection.id, connection])), [dataset.connections]);
   const selectedEvent = selection?.kind === 'event'
     ? dataset.events.find((event) => event.id === selection.id)
     : null;
   const selectedResourceId = selection?.kind === 'resource' ? selection.id : selectedEvent?.resourceId || '';
-  const connectionPath = useMemo(() => (
-    trace.sourceId && trace.targetId
-      ? findConnectionPath(dataset, trace.sourceId, trace.targetId)
-      : null
-  ), [dataset, trace]);
   const unhealthyCount = dataset.resources.filter((resource) => ['degraded', 'expired', 'error', 'disconnected'].includes(resource.status)).length;
   const verifiedCount = dataset.connections.filter((connection) => connection.verificationState === 'verified').length;
 
@@ -223,42 +221,11 @@ export default function IntegrationExplorerPage() {
       </section>
 
       {discoveryOpen && (
-        <section className="relationship-discovery" aria-labelledby="relationship-discovery-title">
-          <div className="relationship-discovery__heading">
-            <span><Icon name="route" size={19} /></span>
-            <div><h2 id="relationship-discovery-title">Deterministic connection discovery</h2><p>Select two resources to trace the shortest recorded path. No AI or inferred edges are added.</p></div>
-            <button aria-label="Close relationship discovery" onClick={() => setDiscoveryOpen(false)}><Icon name="close" size={17} /></button>
-          </div>
-          <div className="relationship-discovery__query">
-            <label>From resource
-              <select onChange={(event) => setTrace({ ...trace, sourceId: event.target.value })} value={trace.sourceId}>
-                <option value="">Select a resource</option>
-                {dataset.resources.map((resource) => <option key={resource.id} value={resource.id}>{resource.provider} / {resource.name}</option>)}
-              </select>
-            </label>
-            <span><Icon name="arrowRight" size={18} /></span>
-            <label>To resource
-              <select onChange={(event) => setTrace({ ...trace, targetId: event.target.value })} value={trace.targetId}>
-                <option value="">Select a resource</option>
-                {dataset.resources.map((resource) => <option key={resource.id} value={resource.id}>{resource.provider} / {resource.name}</option>)}
-              </select>
-            </label>
-          </div>
-          {trace.sourceId && trace.targetId && (
-            <div className={`relationship-discovery__result ${connectionPath ? '' : 'is-empty'}`}>
-              {connectionPath ? connectionPath.resources.map((resourceId, index) => {
-                const resource = resourcesById.get(resourceId);
-                const connection = index < connectionPath.connections.length ? connectionsById.get(connectionPath.connections[index]) : null;
-                return (
-                  <span className="discovery-path-segment" key={resourceId}>
-                    <button onClick={() => selectResource(resourceId)}><strong>{resource.name}</strong><small>{resource.provider} · {RESOURCE_LABELS[resource.type]}</small></button>
-                    {connection && <i><Icon name="arrowRight" size={14} />{connection.relationshipType.replaceAll('_', ' ')}</i>}
-                  </span>
-                );
-              }) : <p><Icon name="issue" size={15} /> No recorded relationship path connects these resources.</p>}
-            </div>
-          )}
-        </section>
+        <RelationshipDiscovery
+          dataset={dataset}
+          onClose={() => setDiscoveryOpen(false)}
+          onSelectResource={selectResource}
+        />
       )}
 
       <nav aria-label="Integration explorer sections" className="integration-section-nav">
@@ -273,7 +240,7 @@ export default function IntegrationExplorerPage() {
         <label className="integration-search"><Icon name="search" size={16} /><input aria-label="Search resources" onChange={(event) => setFilters({ ...filters, search: event.target.value })} placeholder="Search resources, providers, and metadata…" value={filters.search} /></label>
         <label><span>Provider</span><select onChange={(event) => setFilters({ ...filters, provider: event.target.value })} value={filters.provider}><option value="">All providers</option>{facets.providers.map((provider) => <option key={provider} value={provider}>{provider}</option>)}</select></label>
         <label><span>Resource type</span><select disabled={Boolean(activeSection.type)} onChange={(event) => setFilters({ ...filters, resourceType: event.target.value })} value={filters.resourceType}><option value="">All types</option>{facets.resourceTypes.map((type) => <option key={type} value={type}>{RESOURCE_LABELS[type] || type}</option>)}</select></label>
-        <label><span>Health</span><select onChange={(event) => setFilters({ ...filters, status: event.target.value })} value={filters.status}><option value="">All states</option>{facets.statuses.map((status) => <option key={status} value={status}>{status}</option>)}</select></label>
+        <label><span>Health</span><select onChange={(event) => setFilters({ ...filters, status: event.target.value })} value={filters.status}><option value="">All states</option><option value="attention">Needs attention</option>{facets.statuses.map((status) => <option key={status} value={status}>{status}</option>)}</select></label>
         {activeView === 'graph' && <label className="integration-group-toggle"><input checked={groupByProvider} onChange={(event) => setGroupByProvider(event.target.checked)} type="checkbox" /><span>Group providers</span></label>}
         {Object.values(filters).some(Boolean) && !activeSection.type && <button className="integration-clear-filters" onClick={() => setFilters({ search: '', provider: '', resourceType: '', status: '' })}>Clear</button>}
       </section>

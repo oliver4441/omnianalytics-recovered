@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import test from 'node:test';
 import {
   buildRelationshipIndex,
+  discoverRelatedResources,
   filterIntegrationDataset,
   filterIntegrationEvents,
   findConnectionPath,
@@ -81,11 +82,55 @@ test('relationship index and traversal return the deterministic shortest recorde
   assert.equal(findConnectionPath(dataset, 'missing', 'missing'), null);
 });
 
+test('deterministic discovery finds typed resources through recorded relationship paths', () => {
+  const normalized = normalizeIntegrationDataset(dataset);
+  const deployments = discoverRelatedResources(normalized, 'account:a', {
+    targetTypes: ['deployment'],
+    maxDepth: 4,
+  });
+
+  assert.equal(deployments.length, 1);
+  assert.equal(deployments[0].resource.id, 'deployment:a');
+  assert.deepEqual(deployments[0].resources, ['account:a', 'repository:a', 'deployment:a']);
+  assert.deepEqual(deployments[0].connections, ['owns', 'deploys']);
+  assert.equal(deployments[0].depth, 2);
+  assert.deepEqual(discoverRelatedResources(normalized, 'account:a', {
+    targetTypes: ['deployment'],
+    maxDepth: 1,
+  }), []);
+  assert.equal(discoverRelatedResources(normalized, 'deployment:a', {
+    targetTypes: ['account'],
+    terminalRelationshipTypes: ['owns'],
+  })[0].resource.id, 'account:a');
+  assert.deepEqual(discoverRelatedResources(normalized, 'deployment:a', {
+    targetTypes: ['account'],
+    terminalRelationshipTypes: ['deploys'],
+  }), []);
+  assert.deepEqual(discoverRelatedResources(normalized, 'missing', { targetTypes: ['deployment'] }), []);
+
+  const parallelRelationships = normalizeIntegrationDataset({
+    ...dataset,
+    connections: [
+      { ...dataset.connections[0], id: 'collaborates', relationshipType: 'collaborates_with' },
+      ...dataset.connections,
+    ],
+  });
+  const owner = discoverRelatedResources(parallelRelationships, 'repository:a', {
+    targetTypes: ['account'],
+    terminalRelationshipTypes: ['owns'],
+  });
+  assert.equal(owner[0].connections.at(-1), 'owns');
+});
+
 test('resource filters keep only relationships and events inside the visible resource set', () => {
   const filtered = filterIntegrationDataset(dataset, { provider: 'github', search: 'api', resourceType: 'repository' });
   assert.deepEqual(filtered.resources.map(({ id }) => id), ['repository:a']);
   assert.deepEqual(filtered.connections, []);
   assert.deepEqual(filtered.events.map(({ id }) => id), ['event:old']);
+
+  const attention = filterIntegrationDataset(dataset, { status: 'attention' });
+  assert.deepEqual(attention.resources.map(({ id }) => id), ['deployment:a']);
+  assert.deepEqual(attention.events.map(({ id }) => id), ['event:new']);
 });
 
 test('detail and export sanitization allowlists metadata and excludes credential-shaped fields', () => {
@@ -113,8 +158,13 @@ test('provider-specific capabilities stay behind the integration provider bounda
   assert.equal(getProviderCapabilities('github').resourceTypes.includes('repository'), true);
   assert.equal(Object.isFrozen(getProviderCapabilities('github').actions), true);
   assert.equal(supportsProviderAction('github', 'open_provider'), true);
+  assert.equal(getProviderCapabilities('supabase').resourceTypes.includes('database'), true);
+  assert.equal(getProviderCapabilities('neon').resourceTypes.includes('branch'), true);
+  assert.equal(supportsProviderAction('postgresql', 'open_provider'), false);
   assert.equal(supportsProviderAction('unknown-provider', 'open_provider'), false);
   assert.equal(getSafeProviderUrl('github', 'https://github.com/team/api'), 'https://github.com/team/api');
+  assert.equal(getSafeProviderUrl('supabase', 'https://supabase.com/dashboard/project/example'), 'https://supabase.com/dashboard/project/example');
+  assert.equal(getSafeProviderUrl('neon', 'https://console.neon.tech/app/projects/example'), 'https://console.neon.tech/app/projects/example');
   assert.equal(getSafeProviderUrl('github', 'https://attacker.example/team/api'), null);
   assert.equal(getSafeProviderUrl('github', 'https://user:password@github.com/team/api'), null);
   assert.equal(getSafeProviderUrl('github', 'https://github.com/team/api?token=secret'), null);
