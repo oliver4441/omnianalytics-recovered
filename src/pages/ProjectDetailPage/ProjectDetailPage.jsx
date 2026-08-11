@@ -193,9 +193,14 @@ function ProjectDetailPage() {
           <h1>{project.name}</h1>
           <p>{project.description || 'No project description has been added.'}</p>
         </div>
-        <button className="project-detail__primary" type="button" onClick={() => setShowCreateModal(true)}>
-          <Icon name="plus" size={15} /> Add task
-        </button>
+        <div className="project-detail__heading-actions">
+          <button className="project-detail__secondary" type="button" onClick={() => navigate(`/integrations/graph?project=${encodeURIComponent(projectId)}`)}>
+            <Icon name="graph" size={15} /> Infrastructure graph
+          </button>
+          <button className="project-detail__primary" type="button" onClick={() => setShowCreateModal(true)}>
+            <Icon name="plus" size={15} /> Add task
+          </button>
+        </div>
       </header>
 
       {error && (

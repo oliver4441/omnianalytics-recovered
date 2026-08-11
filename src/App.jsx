@@ -13,6 +13,7 @@ import DashboardPage from './pages/DashboardPage/DashboardPage';
 import ProjectsPage from './pages/ProjectsPage/ProjectsPage';
 import ProjectDetailPage from './pages/ProjectDetailPage/ProjectDetailPage';
 import FeaturePreviewPage from './pages/FeaturePreviewPage/FeaturePreviewPage';
+import IntegrationExplorerPage from './pages/IntegrationExplorerPage/IntegrationExplorerPage';
 import SettingsPage from './pages/SettingsPage/SettingsPage';
 import ProfilePage from './pages/ProfilePage/ProfilePage';
 import NotFoundPage from './pages/NotFoundPage/NotFoundPage';
@@ -80,6 +81,7 @@ function AppContent() {
         <Route path="/repositories" element={<FeaturePreviewPage />} />
         <Route path="/cicd" element={<FeaturePreviewPage />} />
         <Route path="/releases" element={<FeaturePreviewPage />} />
+        <Route path="/integrations/*" element={<IntegrationExplorerPage />} />
         <Route path="/analytics" element={<FeaturePreviewPage />} />
         <Route path="/security" element={<FeaturePreviewPage />} />
         <Route path="/docs" element={<FeaturePreviewPage />} />

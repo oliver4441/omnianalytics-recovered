@@ -15,6 +15,8 @@ export const FEATURE_FLAGS = Object.freeze({
   databaseIntegrations: FEATURE_STATES.DISABLED,
   securityCenter: FEATURE_STATES.PREVIEW,
   documentationWorkspace: FEATURE_STATES.INTERNAL,
+  integrationExplorer: FEATURE_STATES.ENABLED,
+  developerProgress: FEATURE_STATES.DISABLED,
 });
 
 const STORAGE_KEY = 'omni-feature-overrides';

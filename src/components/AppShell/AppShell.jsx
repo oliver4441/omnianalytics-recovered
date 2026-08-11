@@ -26,6 +26,19 @@ const navigation = [
     ],
   },
   {
+    label: 'Integrations',
+    items: [
+      { label: 'Integration overview', shortLabel: 'Overview', icon: 'overview', to: '/integrations', end: true, flag: 'integrationExplorer' },
+      { label: 'Relationship graph', shortLabel: 'Graph', icon: 'graph', to: '/integrations/graph', flag: 'integrationExplorer' },
+      { label: 'Provider accounts', shortLabel: 'Accounts', icon: 'users', to: '/integrations/accounts', flag: 'integrationExplorer' },
+      { label: 'Connected repositories', shortLabel: 'Repositories', icon: 'branch', to: '/integrations/repositories', flag: 'integrationExplorer' },
+      { label: 'Deployments', icon: 'rocket', to: '/integrations/deployments', flag: 'integrationExplorer' },
+      { label: 'Connections', icon: 'link', to: '/integrations/connections', flag: 'integrationExplorer' },
+      { label: 'Integration activity', shortLabel: 'Activity', icon: 'activity', to: '/integrations/activity', flag: 'integrationExplorer' },
+      { label: 'Integration health', shortLabel: 'Health', icon: 'health', to: '/integrations/health', flag: 'integrationExplorer' },
+    ],
+  },
+  {
     label: 'Operate',
     items: [
       { label: 'Analytics', icon: 'chart', to: '/analytics', flag: 'developerAnalytics' },
@@ -232,13 +245,13 @@ export default function AppShell({ user }) {
               {group.items.map((item) => (
                 <NavLink
                   className={({ isActive }) => `app-nav__item ${isActive ? 'is-active' : ''}`}
-                  end={item.to === '/dashboard'}
+                  end={item.end || item.to === '/dashboard'}
                   key={item.to}
                   title={item.label}
                   to={item.to}
                 >
                   <Icon name={item.icon} size={18} />
-                  <span className="app-nav__item-label">{item.label}</span>
+                  <span className="app-nav__item-label">{item.shortLabel || item.label}</span>
                   <FeatureLabel flag={item.flag} />
                 </NavLink>
               ))}

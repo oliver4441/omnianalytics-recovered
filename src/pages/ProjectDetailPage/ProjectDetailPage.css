@@ -32,6 +32,9 @@
 .project-detail__eyebrow { display: block; margin-bottom: 5px; color: var(--oa-brand-600); font-size: 9px; font-weight: 720; letter-spacing: .08em; text-transform: uppercase; }
 .project-detail__heading h1 { overflow: hidden; color: var(--oa-text); font-size: 28px; font-weight: 720; letter-spacing: -.04em; text-overflow: ellipsis; white-space: nowrap; }
 .project-detail__heading p { max-width: 690px; overflow: hidden; margin-top: 7px; color: var(--oa-text-secondary); font-size: var(--oa-text-sm); line-height: 1.55; text-overflow: ellipsis; white-space: nowrap; }
+.project-detail__heading-actions { display: flex; flex: 0 0 auto; gap: 8px; }
+.project-detail__secondary { min-height: 40px; display: inline-flex; align-items: center; justify-content: center; gap: 7px; padding: 0 14px; border: 1px solid var(--oa-border-strong); border-radius: 8px; background: var(--oa-surface); color: var(--oa-text-secondary); font-size: var(--oa-text-sm); font-weight: 650; }
+.project-detail__secondary:hover { border-color: var(--oa-brand-400); color: var(--oa-brand-700); }
 
 .project-detail__primary {
   min-height: 40px;
@@ -157,7 +160,8 @@
   .project-detail__heading { align-items: stretch; flex-direction: column; gap: 17px; }
   .project-detail__heading h1 { font-size: 25px; }
   .project-detail__heading p { white-space: normal; }
-  .project-detail__heading > .project-detail__primary { width: 100%; min-height: 44px; }
+  .project-detail__heading-actions { display: grid; grid-template-columns: 1fr 1fr; width: 100%; }
+  .project-detail__heading-actions button { width: 100%; min-height: 44px; }
   .project-overview { grid-template-columns: 1fr; }
   .project-overview__main { padding: 18px; }
   .project-overview__metrics div { padding-right: 10px; }
@@ -176,4 +180,8 @@
   .project-task-modal form { padding: 19px 18px 20px; }
   .project-task-modal__actions { display: grid; grid-template-columns: 1fr 1.25fr; }
   .project-task-modal__actions > button { width: 100%; min-height: 44px; }
+}
+
+@media (max-width: 419px) {
+  .project-detail__heading-actions { grid-template-columns: 1fr; }
 }

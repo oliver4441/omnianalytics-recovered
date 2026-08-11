@@ -23,10 +23,11 @@ test.describe('public OmniAnalytics experience', () => {
   });
 
   test('redirects protected routes to sign in when no authenticated session exists', async ({ page }) => {
-    await page.goto('/dashboard');
-
-    await expect(page).toHaveURL(/\/login$/);
-    await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+    for (const path of ['/dashboard', '/integrations/graph']) {
+      await page.goto(path);
+      await expect(page).toHaveURL(/\/login$/);
+      await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();
+    }
   });
 
   test('fits the 320px mobile viewport without horizontal overflow', async ({ page }) => {
