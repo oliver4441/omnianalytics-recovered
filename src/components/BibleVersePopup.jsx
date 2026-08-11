@@ -34,7 +34,7 @@ function BibleVersePopup() {
     <div className="bible-verse-popup">
       <button className="verse-close-btn" onClick={closeVerse}>×</button>
       <div className="verse-content">
-        <p className="verse-text">"{verse.text}"</p>
+        <p className="verse-text">&ldquo;{verse.text}&rdquo;</p>
         <p className="verse-reference">- {verse.verse}</p>
       </div>
     </div>
