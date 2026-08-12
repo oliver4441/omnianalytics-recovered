@@ -2,7 +2,7 @@ import { expect, test } from '@playwright/test';
 
 test.describe('workspace module routes', () => {
   test('keeps every workspace module behind authentication', async ({ page }) => {
-    for (const path of ['/repositories', '/issues', '/cicd', '/releases', '/analytics', '/security', '/docs']) {
+    for (const path of ['/repositories', '/activity', '/issues', '/cicd', '/releases', '/analytics', '/security', '/docs']) {
       await page.goto(path);
       await expect(page).toHaveURL(/\/login$/);
       await expect(page.getByRole('heading', { name: 'Welcome back' })).toBeVisible();

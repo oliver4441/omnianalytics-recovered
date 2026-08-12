@@ -17,6 +17,7 @@ import IssuesPage from './pages/IssuesPage/IssuesPage';
 import CicdPage from './pages/CicdPage/CicdPage';
 import ReleasesPage from './pages/ReleasesPage/ReleasesPage';
 import AnalyticsPage from './pages/AnalyticsPage/AnalyticsPage';
+import ActivityPage from './pages/ActivityPage/ActivityPage';
 import SecurityPage from './pages/SecurityPage/SecurityPage';
 import DocsPage from './pages/DocsPage/DocsPage';
 import IntegrationExplorerPage from './pages/IntegrationExplorerPage/IntegrationExplorerPage';
@@ -85,6 +86,7 @@ function AppContent() {
         <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
         <Route path="/issues" element={<IssuesPage />} />
         <Route path="/repositories" element={<RepositoriesPage />} />
+        <Route path="/activity" element={<ActivityPage />} />
         <Route path="/cicd" element={<CicdPage />} />
         <Route path="/releases" element={<ReleasesPage />} />
         <Route path="/integrations/*" element={<IntegrationExplorerPage />} />

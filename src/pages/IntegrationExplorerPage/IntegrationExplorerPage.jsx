@@ -1,6 +1,10 @@
 import { useEffect, useMemo, useState } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
+import DetailPanel from '../../components/DetailPanel/DetailPanel';
+import ObjectDetail, { ObjectDetailBadges } from '../../components/DetailPanel/ObjectDetail';
+import FreshnessIndicator from '../../components/FreshnessIndicator';
 import Icon from '../../components/Icon';
+import { buildObjectDescriptor } from '../../modules/objects/index.js';
 import {
   filterIntegrationDataset,
   getDatasetFacets,
@@ -9,7 +13,6 @@ import {
   RESOURCE_LABELS,
 } from '../../modules/integrations';
 import ActivityTimeline from './ActivityTimeline';
-import IntegrationDetailPanel from './IntegrationDetailPanel';
 import RelationshipDiscovery from './RelationshipDiscovery';
 import RelationshipGraph from './RelationshipGraph';
 import ResourceTable from './ResourceTable';
@@ -138,6 +141,10 @@ export default function IntegrationExplorerPage() {
     ? dataset.events.find((event) => event.id === selection.id)
     : null;
   const selectedResourceId = selection?.kind === 'resource' ? selection.id : selectedEvent?.resourceId || '';
+  const descriptor = useMemo(
+    () => (selection ? buildObjectDescriptor(dataset, selection) : null),
+    [dataset, selection],
+  );
   const unhealthyCount = dataset.resources.filter((resource) => ['degraded', 'expired', 'error', 'disconnected'].includes(resource.status)).length;
   const verifiedCount = dataset.connections.filter((connection) => connection.verificationState === 'verified').length;
 
@@ -194,7 +201,7 @@ export default function IntegrationExplorerPage() {
     <div className="integration-page">
       <header className="integration-hero">
         <div>
-          <span className="integration-hero__eyebrow"><Icon name="graph" size={14} /> Unified integration explorer <i>Preview</i></span>
+          <span className="integration-hero__eyebrow"><Icon name="graph" size={14} /> Unified integration explorer</span>
           <h1>Understand how your systems connect.</h1>
           <p>Graph, table, timeline, and detail views share one attributed relationship dataset. Imported records remain clearly distinct from provider-verified connections.</p>
         </div>
@@ -217,7 +224,7 @@ export default function IntegrationExplorerPage() {
         <div><span className="provider-glyph"><Icon name="link" size={17} /></span><p><strong>{dataset.connections.length}</strong><small>Connections</small></p></div>
         <div><span className="provider-glyph"><Icon name="checkCircle" size={17} /></span><p><strong>{verifiedCount}</strong><small>Provider verified</small></p></div>
         <div><span className={`provider-glyph ${unhealthyCount ? 'has-warning' : ''}`}><Icon name="health" size={17} /></span><p><strong>{unhealthyCount}</strong><small>Need attention</small></p></div>
-        <div className="integration-summary__source"><Icon name="download" size={15} /><p><strong>Repository metadata</strong><small>Generated {dataset.generatedAt ? new Date(dataset.generatedAt).toLocaleString() : 'time unavailable'}</small></p></div>
+        <div className="integration-summary__source"><Icon name="download" size={15} /><p><strong>Repository metadata</strong><small><FreshnessIndicator timestamp={dataset.generatedAt} /></small></p></div>
       </section>
 
       {discoveryOpen && (
@@ -283,14 +290,51 @@ export default function IntegrationExplorerPage() {
           )}
         </section>
 
-        <IntegrationDetailPanel
-          dataset={dataset}
+        <DetailPanel
+          open={Boolean(descriptor)}
           onClose={() => setSelection(null)}
-          onSelectResource={selectResource}
-          onViewActivity={viewActivity}
-          onViewGraph={viewGraph}
-          selection={selection}
-        />
+          eyebrow={descriptor ? (descriptor.kind === 'connection' ? 'Connection' : descriptor.kind === 'event' ? 'Timeline event' : descriptor.subtitle) : ''}
+          title={descriptor?.title || ''}
+          badges={descriptor ? <ObjectDetailBadges descriptor={descriptor} /> : null}
+          footer={descriptor && (
+            <>
+              {descriptor.actions?.map((action) => (action.available === false ? (
+                <span key={action.id} className="module-note detail-action-note">
+                  <span><Icon name="shield" size={14} /></span>
+                  <p><strong>{action.label} unavailable.</strong>{action.reason}</p>
+                </span>
+              ) : (
+                <a key={action.id} className="module-btn module-btn--primary module-btn--sm" href={action.url} target="_blank" rel="noopener noreferrer">
+                  <Icon name="arrowUpRight" size={14} /> {action.label}
+                </a>
+              )))}
+              {descriptor.kind === 'resource' && (
+                <>
+                  <button type="button" className="module-btn module-btn--sm" onClick={() => viewGraph(descriptor.id)}>
+                    <Icon name="graph" size={14} /> Trace in graph
+                  </button>
+                  <button type="button" className="module-btn module-btn--sm" onClick={() => viewActivity(descriptor.id)}>
+                    <Icon name="activity" size={14} /> Open activity
+                  </button>
+                </>
+              )}
+              {descriptor.kind === 'event' && descriptor.resource && (
+                <button type="button" className="module-btn module-btn--sm" onClick={() => viewGraph(descriptor.resource.id)}>
+                  <Icon name="graph" size={14} /> Open resource in graph
+                </button>
+              )}
+            </>
+          )}
+        >
+          {descriptor && (
+            <ObjectDetail
+              descriptor={descriptor}
+              onOpenConnection={(id) => setSelection({ kind: 'connection', id })}
+              onOpenEvent={(id) => setSelection({ kind: 'event', id })}
+              onOpenResource={(id) => setSelection({ kind: 'resource', id })}
+            />
+          )}
+        </DetailPanel>
       </div>
 
       <footer className="integration-provenance-note">

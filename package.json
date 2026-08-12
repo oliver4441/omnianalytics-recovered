@@ -12,7 +12,7 @@
     "build": "vite build",
     "preview": "vite preview",
     "lint": "eslint src --ext js,jsx --report-unused-disable-directives --max-warnings 0",
-    "test:integrations": "node --test tests/integration-service.test.mjs tests/workspace-modules.test.mjs",
+    "test:integrations": "node --test tests/integration-service.test.mjs tests/workspace-modules.test.mjs tests/platform-core.test.mjs",
     "test:e2e": "playwright test",
     "format": "prettier --write src/",
     "electron:dev": "vite build && electron .",

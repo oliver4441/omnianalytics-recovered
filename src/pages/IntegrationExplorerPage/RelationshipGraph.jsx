@@ -1,5 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import Icon from '../../components/Icon';
+import { objectTypeIcon } from '../../modules/objects/index.js';
 
 const NODE_WIDTH = 208;
 const NODE_HEIGHT = 82;
@@ -33,24 +34,9 @@ const healthSymbol = {
   unknown: '?',
 };
 
-const typeIcon = {
-  account: 'users',
-  repository: 'branch',
-  project: 'cube',
-  deployment: 'rocket',
-  domain: 'globe',
-  database: 'database',
-  storage: 'server',
-  environment: 'server',
-  branch: 'branch',
-  commit: 'gitCommit',
-  issue: 'issue',
-  pull_request: 'pullRequest',
-  release: 'rocket',
-  api: 'code',
-  worker: 'zap',
-  group: 'layers',
-};
+// Node icons come from the canonical object model; the graph only adds its
+// provider-group overlay concept.
+const typeIcon = { group: 'layers' };
 
 const getAutomaticPositions = (resources) => {
   const rankCounts = new Map();
@@ -513,7 +499,7 @@ export default function RelationshipGraph({
                 <rect className="graph-node__surface" height={NODE_HEIGHT} rx="14" width={NODE_WIDTH} />
                 <foreignObject height="38" width="38" x="14" y="14">
                   <span className={`graph-node__icon provider-${resource.provider}`}>
-                    <Icon name={typeIcon[resource.type] || 'cube'} size={18} />
+                    <Icon name={typeIcon[resource.type] || objectTypeIcon(resource.type)} size={18} />
                   </span>
                 </foreignObject>
                 <text className="graph-node__provider" x="64" y="25">{resource.provider}</text>

@@ -313,52 +313,6 @@
 .integration-empty button:hover { border-color: var(--oa-brand-400); background: var(--oa-surface-hover); color: var(--oa-text); }
 
 /* Detail panel */
-.integration-detail { min-width: 0; background: var(--oa-surface-raised); }
-.integration-detail--empty { display: grid; align-content: center; justify-items: center; padding: var(--oa-space-6); text-align: center; }
-.integration-detail__empty-icon { display: grid; width: 52px; height: 52px; place-items: center; border-radius: var(--oa-radius-lg); background: var(--oa-bg); color: var(--oa-text-muted); }
-.integration-detail--empty h2 { margin: var(--oa-space-4) 0 var(--oa-space-2); color: var(--oa-text); font-size: var(--oa-text-lg); }
-.integration-detail--empty p { color: var(--oa-text-secondary); font-size: 11px; line-height: 1.6; }
-.integration-detail--empty ul { display: grid; gap: 7px; margin-top: var(--oa-space-4); text-align: left; }
-.integration-detail--empty li { display: flex; align-items: center; gap: 7px; color: var(--oa-text-muted); font-size: 10px; }
-.integration-detail__header { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: var(--oa-space-3); min-height: 68px; padding: var(--oa-space-3); border-bottom: 1px solid var(--oa-border); }
-.integration-detail__icon { display: grid; width: 36px; height: 36px; place-items: center; border-radius: 10px; background: var(--oa-brand-50); color: var(--oa-brand-600); }
-.integration-detail__header > div { min-width: 0; }
-.integration-detail__header span:not(.integration-detail__icon) { color: var(--oa-text-muted); font-size: 8px; font-weight: 800; letter-spacing: .06em; text-transform: uppercase; }
-.integration-detail__header h2 { overflow: hidden; margin-top: 2px; color: var(--oa-text); font-size: var(--oa-text-sm); text-overflow: ellipsis; white-space: nowrap; }
-.integration-detail__header > button { display: grid; width: 32px; height: 32px; place-items: center; border-radius: 7px; color: var(--oa-text-muted); }
-.integration-detail__header > button:hover { background: var(--oa-surface-hover); color: var(--oa-text); }
-.integration-detail__body { display: grid; gap: var(--oa-space-4); max-height: 570px; padding: var(--oa-space-4); overflow-y: auto; }
-.detail-attribution { display: flex; align-items: center; gap: 9px; padding: 10px; border: 1px solid var(--oa-border); border-radius: 9px; background: var(--oa-bg-subtle); }
-.verification-mark { display: grid; width: 30px; height: 30px; flex: 0 0 auto; place-items: center; border-radius: 8px; background: var(--oa-info-50); color: var(--oa-info-500); }
-.verification-mark.verification-verified { background: var(--oa-success-50); color: var(--oa-success-700); }
-.verification-mark.verification-inferred { background: var(--oa-warning-50); color: var(--oa-warning-700); }
-.detail-attribution > div { display: grid; gap: 2px; }
-.detail-attribution strong { color: var(--oa-text); font-size: 10px; }
-.detail-attribution small { color: var(--oa-text-muted); font-size: 8px; }
-.integration-detail__facts,
-.integration-detail__metadata dl { display: grid; }
-.integration-detail__facts > div,
-.integration-detail__metadata dl > div { display: grid; grid-template-columns: minmax(85px, .8fr) minmax(0, 1.2fr); gap: 10px; padding: 8px 0; border-bottom: 1px solid var(--oa-border); }
-.integration-detail dt { color: var(--oa-text-muted); font-size: 9px; }
-.integration-detail dd { min-width: 0; overflow-wrap: anywhere; color: var(--oa-text); font-size: 10px; font-weight: 650; text-align: right; }
-.integration-detail dd button { color: var(--oa-brand-600); font: inherit; text-align: right; }
-.integration-detail__metadata h3,
-.integration-detail__connections header strong { margin-bottom: 4px; color: var(--oa-text); font-size: 10px; font-weight: 800; }
-.integration-detail__connections header { display: flex; align-items: center; justify-content: space-between; padding-bottom: 6px; }
-.integration-detail__connections header span { display: grid; min-width: 20px; height: 20px; place-items: center; border-radius: var(--oa-radius-full); background: var(--oa-bg); color: var(--oa-text-muted); font-size: 8px; }
-.integration-detail__connections > button { display: grid; grid-template-columns: auto minmax(0, 1fr) auto; align-items: center; gap: 8px; width: 100%; padding: 8px 0; border-top: 1px solid var(--oa-border); text-align: left; }
-.integration-detail__connections > button > span:nth-child(2) { display: grid; gap: 2px; }
-.integration-detail__connections strong { color: var(--oa-text); font-size: 10px; }
-.integration-detail__connections small { color: var(--oa-text-muted); font-size: 8px; }
-.integration-detail__connections > p { color: var(--oa-text-muted); font-size: 10px; line-height: 1.5; }
-.integration-detail__evidence { padding: 10px; border-left: 3px solid var(--oa-info-500); border-radius: 0 7px 7px 0; background: var(--oa-info-50); }
-.integration-detail__evidence strong { color: var(--oa-text); font-size: 9px; }
-.integration-detail__evidence p { margin-top: 3px; color: var(--oa-text-secondary); font-size: 9px; line-height: 1.5; }
-.integration-detail__actions { display: grid; grid-template-columns: 1fr 1fr; gap: 6px; }
-.integration-detail__actions button,
-.integration-detail__actions a { display: inline-flex; min-height: 36px; align-items: center; justify-content: center; gap: 5px; padding: 0 8px; border: 1px solid var(--oa-border); border-radius: 8px; color: var(--oa-text-secondary); font-size: 9px; font-weight: 750; text-align: center; }
-.integration-detail__actions .primary { border-color: var(--oa-brand-600); background: var(--oa-brand-600); color: white; }
-.integration-detail__safety { display: flex; align-items: flex-start; gap: 6px; padding: 9px; border-radius: 8px; background: var(--oa-bg); color: var(--oa-text-muted); font-size: 8px; line-height: 1.4; }
 
 .integration-provenance-note { display: flex; align-items: flex-start; gap: var(--oa-space-3); padding: var(--oa-space-3) var(--oa-space-4); border: 1px solid var(--oa-border); border-radius: var(--oa-radius-lg); background: var(--oa-bg-subtle); color: var(--oa-text-muted); }
 .integration-provenance-note svg { flex: 0 0 auto; color: var(--oa-brand-600); }

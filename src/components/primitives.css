@@ -1,0 +1,86 @@
+/* Shared primitive styles: StatusBadge, ProviderBadge, FreshnessIndicator. */
+
+.status-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 3px 10px;
+  border-radius: var(--oa-radius-full);
+  font-size: 11px;
+  font-weight: 640;
+  line-height: 1.5;
+  white-space: nowrap;
+}
+.status-badge i { font-style: normal; font-size: 10px; }
+.status-badge small { color: inherit; font-size: 9px; font-weight: 560; opacity: .75; text-transform: uppercase; }
+.status-badge--sm { padding: 2px 8px; font-size: 10px; }
+
+.status-badge--healthy { background: var(--oa-success-50); color: var(--oa-success-700); }
+.status-badge--running { background: var(--oa-info-50); color: var(--oa-info-500); }
+.status-badge--pending { background: var(--oa-surface-hover); color: var(--oa-text-secondary); }
+.status-badge--warning { background: var(--oa-warning-50); color: var(--oa-warning-700); }
+.status-badge--failed { background: var(--oa-danger-50); color: var(--oa-danger-700); }
+.status-badge--disconnected { background: var(--oa-surface-hover); color: var(--oa-text-muted); }
+.status-badge--unknown { background: var(--oa-surface-hover); color: var(--oa-text-muted); }
+[data-theme='dark'] .status-badge--healthy { background: rgba(23, 166, 115, .14); }
+[data-theme='dark'] .status-badge--running { background: rgba(35, 131, 217, .14); }
+[data-theme='dark'] .status-badge--warning { background: rgba(217, 145, 0, .14); }
+[data-theme='dark'] .status-badge--failed { background: rgba(229, 72, 77, .14); }
+
+.provider-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 7px;
+  min-width: 0;
+  color: var(--oa-text-secondary);
+  font-size: var(--oa-text-xs);
+  font-weight: 620;
+}
+.provider-badge__mark {
+  width: 22px;
+  height: 22px;
+  display: grid;
+  flex: 0 0 auto;
+  place-items: center;
+  border: 1px solid var(--oa-border);
+  border-radius: 6px;
+  background: var(--oa-surface-hover);
+  color: var(--oa-text);
+  font-size: 8px;
+  font-weight: 760;
+  letter-spacing: .04em;
+}
+.provider-badge--sm .provider-badge__mark { width: 18px; height: 18px; font-size: 7px; }
+.provider-badge__name { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+.provider-badge[data-provider='github'] .provider-badge__mark { background: #24292f; border-color: #24292f; color: #fff; }
+.provider-badge[data-provider='gitlab'] .provider-badge__mark { background: #e24329; border-color: #e24329; color: #fff; }
+.provider-badge[data-provider='vercel'] .provider-badge__mark { background: #111; border-color: #111; color: #fff; }
+.provider-badge[data-provider='cloudflare'] .provider-badge__mark { background: #f6821f; border-color: #f6821f; color: #fff; }
+.provider-badge[data-provider='firebase'] .provider-badge__mark { background: #f7a41d; border-color: #f7a41d; color: #331b00; }
+.provider-badge[data-provider='supabase'] .provider-badge__mark { background: #3ecf8e; border-color: #3ecf8e; color: #052e1c; }
+.provider-badge[data-provider='neon'] .provider-badge__mark { background: #00e599; border-color: #00e599; color: #04331f; }
+.provider-badge[data-provider='bitbucket'] .provider-badge__mark { background: #2684ff; border-color: #2684ff; color: #fff; }
+.provider-badge[data-provider='postgresql'] .provider-badge__mark { background: #336791; border-color: #336791; color: #fff; }
+.provider-badge[data-provider='omnianalytics'] .provider-badge__mark { background: var(--oa-brand-500); border-color: var(--oa-brand-500); color: #fff; }
+[data-theme='dark'] .provider-badge[data-provider='vercel'] .provider-badge__mark { background: #fff; border-color: #fff; color: #111; }
+
+.freshness {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--oa-text-muted);
+  font-size: var(--oa-text-xs);
+  font-weight: 560;
+}
+.freshness::before {
+  content: '';
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--oa-success-500);
+}
+.freshness--stale::before { background: var(--oa-warning-500); }
+.freshness--failed { color: var(--oa-danger-700); }
+.freshness--failed::before { background: var(--oa-danger-500); }
+.freshness--unknown::before { background: var(--oa-text-muted); }

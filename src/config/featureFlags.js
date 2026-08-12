@@ -16,6 +16,7 @@ export const FEATURE_FLAGS = Object.freeze({
   securityCenter: FEATURE_STATES.ENABLED,
   documentationWorkspace: FEATURE_STATES.ENABLED,
   integrationExplorer: FEATURE_STATES.ENABLED,
+  engineeringActivity: FEATURE_STATES.ENABLED,
   developerProgress: FEATURE_STATES.DISABLED,
 });
 

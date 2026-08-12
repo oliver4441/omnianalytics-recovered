@@ -65,6 +65,7 @@ export default function IssuesPage() {
   const { issues, loading } = useSelector((state) => state.issues);
   const { projects } = useSelector((state) => state.projects);
   const { user } = useSelector((state) => state.auth);
+  const selectedProjectId = useSelector((state) => state.context.selectedProjectId);
 
   const [loadError, setLoadError] = useState('');
   const [filters, setFilters] = useState({ status: '', priority: '', projectId: '', search: '' });
@@ -109,6 +110,13 @@ export default function IssuesPage() {
   useEffect(() => {
     if (searchParams.get('create') === '1') setEditorOpen(true);
   }, [searchParams]);
+
+  // A selected workspace context scopes the issue list automatically.
+  useEffect(() => {
+    if (selectedProjectId) {
+      setFilters((current) => ({ ...current, projectId: selectedProjectId }));
+    }
+  }, [selectedProjectId]);
 
   const visibleIssues = useMemo(
     () => sortIssues(filterIssues(issues, filters), sortId),

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import { Link } from 'react-router-dom';
+import FreshnessIndicator from '../../components/FreshnessIndicator';
 import Icon from '../../components/Icon';
 import { useToast } from '../../components/Toast';
 import { loadRepositoryDataset } from '../../modules/repositories';
@@ -84,6 +85,7 @@ export default function CicdPage() {
           </p>
         </div>
         <div className="module-hero__actions">
+          <FreshnessIndicator timestamp={dataset?.generatedAt} failed={Boolean(loadError)} />
           <button type="button" className="module-btn" onClick={() => load(undefined, { announce: true })} disabled={loading}>
             <Icon name="refresh" size={15} /> Refresh
           </button>
