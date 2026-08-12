@@ -1,0 +1,26 @@
+.issues-row { cursor: pointer; }
+
+.issues-detail { display: flex; flex-direction: column; gap: 14px; padding: 18px 21px 21px; }
+
+.issues-detail__badges { display: flex; flex-wrap: wrap; gap: 7px; }
+
+.issues-detail__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px 16px;
+  margin: 0;
+}
+.issues-detail__meta div { display: flex; flex-direction: column; gap: 2px; }
+.issues-detail__meta dt { color: var(--oa-text-muted); font-size: 10px; font-weight: 700; letter-spacing: .05em; text-transform: uppercase; }
+.issues-detail__meta dd { margin: 0; color: var(--oa-text); font-size: var(--oa-text-sm); }
+
+.issues-detail__description {
+  padding: 12px 14px;
+  border: 1px solid var(--oa-border);
+  border-radius: var(--oa-radius-md);
+  background: var(--oa-bg-subtle);
+  color: var(--oa-text-secondary);
+  font-size: var(--oa-text-sm);
+  line-height: 1.6;
+  white-space: pre-wrap;
+}

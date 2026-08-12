@@ -6,15 +6,15 @@ export const FEATURE_STATES = Object.freeze({
 });
 
 export const FEATURE_FLAGS = Object.freeze({
-  githubIntegration: FEATURE_STATES.PREVIEW,
-  issueManagement: FEATURE_STATES.PREVIEW,
-  cicdDashboard: FEATURE_STATES.INTERNAL,
-  releaseManagement: FEATURE_STATES.PREVIEW,
-  developerAnalytics: FEATURE_STATES.PREVIEW,
+  githubIntegration: FEATURE_STATES.ENABLED,
+  issueManagement: FEATURE_STATES.ENABLED,
+  cicdDashboard: FEATURE_STATES.ENABLED,
+  releaseManagement: FEATURE_STATES.ENABLED,
+  developerAnalytics: FEATURE_STATES.ENABLED,
   mobileV2: FEATURE_STATES.ENABLED,
   databaseIntegrations: FEATURE_STATES.DISABLED,
-  securityCenter: FEATURE_STATES.PREVIEW,
-  documentationWorkspace: FEATURE_STATES.INTERNAL,
+  securityCenter: FEATURE_STATES.ENABLED,
+  documentationWorkspace: FEATURE_STATES.ENABLED,
   integrationExplorer: FEATURE_STATES.ENABLED,
   developerProgress: FEATURE_STATES.DISABLED,
 });

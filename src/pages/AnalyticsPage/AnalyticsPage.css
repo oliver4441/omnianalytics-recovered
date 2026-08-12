@@ -1,0 +1,24 @@
+.analytics-chart { height: 240px; padding: 14px 16px 16px; }
+.analytics-chart--doughnut { max-width: 520px; margin: 0 auto; }
+
+.analytics-row { margin-top: 14px; }
+
+.analytics-metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 12px;
+  padding: 18px 16px;
+}
+.analytics-metrics--row { padding: 16px; }
+
+.analytics-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding: 14px 16px;
+  border: 1px solid var(--oa-border);
+  border-radius: var(--oa-radius-lg);
+  background: var(--oa-bg-subtle);
+}
+.analytics-metric strong { color: var(--oa-text); font-size: 24px; font-weight: 720; letter-spacing: -.03em; line-height: 1.1; }
+.analytics-metric small { color: var(--oa-text-muted); font-size: var(--oa-text-xs); }

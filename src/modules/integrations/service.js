@@ -5,10 +5,10 @@ import {
   isKnownVerificationState,
 } from './types.js';
 import { getSafeProviderUrl } from './providers/registry.js';
+import { credentialShape } from '../security/patterns.js';
 
 const normalizeText = (value) => String(value || '').trim().toLowerCase();
 const safeMetadataKeys = new Set(SAFE_METADATA_KEYS);
-const credentialShape = /(?:-----BEGIN [A-Z ]*PRIVATE KEY-----|\b(?:gh[pousr]_[A-Za-z0-9_]{20,}|github_pat_[A-Za-z0-9_]{20,}|glpat-[A-Za-z0-9_-]{12,}|xox[baprs]-\S+|sk_(?:live|test)_[A-Za-z0-9_-]{12,})|\b(?:password|secret|token|api[_-]?key|private[_-]?key)\s*[:=]\s*\S+|https?:\/\/[^/\s:@]+:[^/\s@]+@)/i;
 
 const safePublicText = (value, fallback = '') => {
   if (!['string', 'number', 'boolean'].includes(typeof value)) return fallback;
@@ -138,6 +138,40 @@ const normalizeIntegration = (integration) => ({
   metadata: sanitizeIntegrationMetadata(integration.metadata),
 });
 
+const normalizeWorkspaceProfile = (workspace = {}) => ({
+  manifests: Object.fromEntries(
+    Object.entries(workspace.manifests || {}).map(([name, present]) => [safePublicText(name, 'unknown'), Boolean(present)]),
+  ),
+  rulesPosture: workspace.rulesPosture && typeof workspace.rulesPosture === 'object'
+    ? Object.fromEntries(
+      Object.entries(workspace.rulesPosture).map(([key, value]) => [
+        safePublicText(key, 'unknown'),
+        ['boolean', 'number'].includes(typeof value) ? value : safePublicText(value),
+      ]),
+    )
+    : null,
+  environments: Array.isArray(workspace.environments)
+    ? workspace.environments.map((environment) => ({
+      id: safePublicText(environment?.id, 'unknown'),
+      label: safePublicText(environment?.label, 'unknown'),
+      source: safePublicText(environment?.source, 'unknown'),
+    })).filter((environment) => environment.id !== 'unknown')
+    : [],
+  documentation: Array.isArray(workspace.documentation)
+    ? workspace.documentation.map((entry) => {
+      const rawContent = ['string', 'number'].includes(typeof entry?.content) ? String(entry.content) : '';
+      return {
+        id: safePublicText(entry?.id),
+        title: safePublicText(entry?.title, 'Untitled document'),
+        path: safePublicText(entry?.path),
+        source: safePublicText(entry?.source, 'unknown'),
+        updatedAt: safePublicText(entry?.updatedAt) || null,
+        content: rawContent.length <= 16000 && !credentialShape.test(rawContent) ? rawContent : '',
+      };
+    }).filter((entry) => entry.id)
+    : [],
+});
+
 export const normalizeIntegrationDataset = (dataset) => {
   const resources = dataset.resources.map(normalizeResource).filter((resource) => resource.id);
   const resourceIds = new Set(resources.map((resource) => resource.id));
@@ -163,6 +197,7 @@ export const normalizeIntegrationDataset = (dataset) => {
     events,
     integrations: dataset.integrations.map(normalizeIntegration).filter((integration) => integration.id),
     notices: Array.isArray(dataset.notices) ? dataset.notices.map((notice) => safePublicText(notice)).filter(Boolean) : [],
+    workspace: normalizeWorkspaceProfile(dataset.workspace),
   };
 };
 

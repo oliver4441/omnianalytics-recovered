@@ -12,7 +12,13 @@ import LandingPage from './pages/LandingPage/LandingPage';
 import DashboardPage from './pages/DashboardPage/DashboardPage';
 import ProjectsPage from './pages/ProjectsPage/ProjectsPage';
 import ProjectDetailPage from './pages/ProjectDetailPage/ProjectDetailPage';
-import FeaturePreviewPage from './pages/FeaturePreviewPage/FeaturePreviewPage';
+import RepositoriesPage from './pages/RepositoriesPage/RepositoriesPage';
+import IssuesPage from './pages/IssuesPage/IssuesPage';
+import CicdPage from './pages/CicdPage/CicdPage';
+import ReleasesPage from './pages/ReleasesPage/ReleasesPage';
+import AnalyticsPage from './pages/AnalyticsPage/AnalyticsPage';
+import SecurityPage from './pages/SecurityPage/SecurityPage';
+import DocsPage from './pages/DocsPage/DocsPage';
 import IntegrationExplorerPage from './pages/IntegrationExplorerPage/IntegrationExplorerPage';
 import SettingsPage from './pages/SettingsPage/SettingsPage';
 import ProfilePage from './pages/ProfilePage/ProfilePage';
@@ -77,14 +83,14 @@ function AppContent() {
         <Route path="/dashboard" element={<DashboardPage user={user} />} />
         <Route path="/projects" element={<ProjectsPage />} />
         <Route path="/projects/:projectId" element={<ProjectDetailPage />} />
-        <Route path="/issues" element={<FeaturePreviewPage />} />
-        <Route path="/repositories" element={<FeaturePreviewPage />} />
-        <Route path="/cicd" element={<FeaturePreviewPage />} />
-        <Route path="/releases" element={<FeaturePreviewPage />} />
+        <Route path="/issues" element={<IssuesPage />} />
+        <Route path="/repositories" element={<RepositoriesPage />} />
+        <Route path="/cicd" element={<CicdPage />} />
+        <Route path="/releases" element={<ReleasesPage />} />
         <Route path="/integrations/*" element={<IntegrationExplorerPage />} />
-        <Route path="/analytics" element={<FeaturePreviewPage />} />
-        <Route path="/security" element={<FeaturePreviewPage />} />
-        <Route path="/docs" element={<FeaturePreviewPage />} />
+        <Route path="/analytics" element={<AnalyticsPage />} />
+        <Route path="/security" element={<SecurityPage />} />
+        <Route path="/docs" element={<DocsPage />} />
         <Route path="/settings" element={<SettingsPage user={user} />} />
         <Route path="/profile" element={<ProfilePage />} />
       </Route>
