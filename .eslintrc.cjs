@@ -20,6 +20,10 @@ module.exports = {
     'no-debugger': 'error',
     'no-unused-vars': 'warn',
     'react/react-in-jsx-scope': 'off',
+    // This codebase uses function components without PropTypes throughout and
+    // does not depend on the prop-types package. Validate types where it matters
+    // via tests instead of forcing PropTypes annotations on every component.
+    'react/prop-types': 'off',
   },
   settings: {
     react: {
