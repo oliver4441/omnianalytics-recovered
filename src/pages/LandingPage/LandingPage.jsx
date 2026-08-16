@@ -13,6 +13,7 @@ const lifecycle = [
   { label: 'Review', icon: 'pullRequest' },
   { label: 'Ship', icon: 'rocket' },
   { label: 'Operate', icon: 'chart' },
+  { label: 'Improve', icon: 'refresh' },
 ];
 
 export default function LandingPage({ initialTab = 'login' }) {
@@ -61,6 +62,8 @@ export default function LandingPage({ initialTab = 'login' }) {
   const switchTab = (tab) => {
     setActiveTab(tab);
     setError('');
+    const target = tab === 'signup' ? '/signup' : '/login';
+    if (window.location.pathname !== target) navigate(target);
   };
 
   return (

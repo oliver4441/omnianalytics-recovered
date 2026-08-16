@@ -13,6 +13,7 @@ export {
   findConnectionPath,
   getConnectedResources,
   getDatasetFacets,
+  getRepositoryInsights,
   getTimelineFilterOptions,
   isTimestampWithinLocalDateRange,
   normalizeIntegrationDataset,

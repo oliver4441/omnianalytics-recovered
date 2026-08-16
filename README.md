@@ -20,7 +20,7 @@ AI-generated summaries and AI integrations are intentionally out of scope. Previ
 
 ## Local development
 
-Requirements: a supported Node.js/npm release and Firebase web configuration in local environment variables.
+Requirements: a supported Node.js/npm release and Firebase web configuration in local environment variables. To get started, copy [`.env.example`](.env.example) to `.env.local` and fill in your Firebase web configuration for a non-production preview project.
 
 ```bash
 npm ci
@@ -65,8 +65,8 @@ OmniAnalytics follows a modular-monolith approach. Feature modules should keep c
 - Project and task access requires explicit ownership or membership.
 - Pending email records do not grant project access.
 - Integration credentials and database secrets must never be rendered in the client.
-- Firestore rule changes should be emulator-tested before production deployment.
+- Firestore rule changes should be emulator-tested before production deployment. See [`firestore.rules`](firestore.rules) for the current rules.
 
 ## License
 
-MIT
+MIT — see [`LICENSE`](LICENSE) for details.

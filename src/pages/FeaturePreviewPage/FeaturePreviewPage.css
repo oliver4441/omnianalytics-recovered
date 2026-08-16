@@ -256,3 +256,203 @@
   .feature-boundary-callout { align-items: flex-start; }
   .feature-boundary-callout button { display: none; }
 }
+
+.repo-insights { padding: 16px 19px 4px; }
+
+.repo-insights--loading {
+  min-height: 220px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 12px;
+  color: var(--oa-text-muted);
+  font-size: var(--oa-text-sm);
+}
+
+.repo-insights__spinner {
+  width: 30px;
+  height: 30px;
+  border: 2.5px solid var(--oa-border);
+  border-top-color: var(--oa-brand-500);
+  border-radius: 50%;
+  animation: repo-spin 0.8s linear infinite;
+}
+
+@keyframes repo-spin { to { transform: rotate(360deg); } }
+
+.repo-insights__summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+  gap: 10px;
+  margin-bottom: 18px;
+}
+
+.repo-insights__summary > div {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  padding: 11px 13px;
+  border: 1px solid var(--oa-border);
+  border-radius: var(--oa-radius-md);
+  background: var(--oa-bg-subtle);
+}
+
+.repo-insights__summary .provider-glyph,
+.repo-insights__summary > div > span:first-child {
+  width: 32px;
+  height: 32px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 9px;
+  background: var(--oa-surface);
+  color: var(--oa-brand-600);
+}
+
+.repo-insights__summary p { display: flex; flex-direction: column; line-height: 1.2; }
+.repo-insights__summary strong { font-size: var(--oa-text-lg); font-weight: 700; }
+.repo-insights__summary small { color: var(--oa-text-muted); font-size: 9px; text-transform: uppercase; letter-spacing: .04em; }
+.repo-insights__source { grid-column: 1 / -1; }
+
+.repo-card {
+  margin-bottom: 14px;
+  padding: 0;
+  border: 1px solid var(--oa-border);
+  border-radius: var(--oa-radius-md);
+  background: var(--oa-surface);
+  overflow: hidden;
+}
+
+.repo-card__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 16px;
+  border-bottom: 1px solid var(--oa-border);
+  background: var(--oa-bg-subtle);
+}
+
+.repo-card__title { display: flex; align-items: center; gap: 11px; }
+.repo-card__icon {
+  width: 36px;
+  height: 36px;
+  display: grid;
+  place-items: center;
+  flex: 0 0 auto;
+  border-radius: 9px;
+  background: var(--oa-brand-50);
+  color: var(--oa-brand-600);
+}
+[data-theme='dark'] .repo-card__icon { background: rgba(99, 91, 255, .12); }
+.repo-card__title strong { display: block; font-size: var(--oa-text-md); font-weight: 680; }
+.repo-card__title small { color: var(--oa-text-muted); font-size: 9px; text-transform: capitalize; }
+
+.repo-card__verify {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 4px 9px;
+  border-radius: var(--oa-radius-full);
+  font-size: 9px;
+  font-weight: 620;
+  text-transform: uppercase;
+  letter-spacing: .03em;
+  background: var(--oa-bg-subtle);
+  color: var(--oa-text-secondary);
+}
+.repo-card__verify i { width: 6px; height: 6px; border-radius: 50%; background: var(--oa-text-muted); }
+.repo-card__verify--verified { color: var(--oa-success-700); }
+.repo-card__verify--verified i { background: var(--oa-success-500); }
+.repo-card__verify--imported i { background: var(--oa-brand-500); }
+
+.repo-card__meta {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+  gap: 1px;
+  margin: 0;
+  background: var(--oa-border);
+}
+.repo-card__meta > div { padding: 11px 16px; background: var(--oa-surface); }
+.repo-card__meta dt { color: var(--oa-text-muted); font-size: 9px; text-transform: uppercase; letter-spacing: .04em; }
+.repo-card__meta dd { margin: 3px 0 0; font-size: var(--oa-text-sm); font-weight: 600; word-break: break-all; }
+.repo-card__health { text-transform: capitalize; }
+.repo-card__health--healthy { color: var(--oa-success-700); }
+.repo-card__health--degraded,
+.repo-card__health--error,
+.repo-card__health--disconnected { color: var(--oa-warning-500); }
+
+.repo-card__link {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  margin: 12px 16px 0;
+  color: var(--oa-brand-600);
+  font-size: var(--oa-text-sm);
+  font-weight: 620;
+}
+.repo-card__link:hover { text-decoration: underline; }
+
+.repo-card__activity { padding: 14px 16px; }
+.repo-card__activity-header { display: flex; align-items: center; justify-content: space-between; margin-bottom: 10px; }
+.repo-card__activity-header h4 { font-size: var(--oa-text-sm); font-weight: 680; }
+.repo-card__graph-link {
+  display: inline-flex;
+  align-items: center;
+  gap: 5px;
+  padding: 5px 9px;
+  border: 1px solid var(--oa-border);
+  border-radius: 7px;
+  background: transparent;
+  color: var(--oa-text-secondary);
+  font-size: 9px;
+  font-weight: 620;
+}
+.repo-card__graph-link:hover { background: var(--oa-surface-hover); }
+
+.repo-commit-list { display: flex; flex-direction: column; }
+.repo-commit-list li {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+  min-height: 42px;
+  padding: 8px 0;
+  border-bottom: 1px solid var(--oa-border);
+  font-size: 10px;
+}
+.repo-commit-list li:last-child { border-bottom: 0; }
+.repo-commit-list__hash {
+  flex: 0 0 auto;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: var(--oa-bg-subtle);
+  color: var(--oa-brand-600);
+  font-family: var(--oa-font-mono, ui-monospace, monospace);
+  font-size: 9px;
+  font-weight: 700;
+}
+.repo-commit-list__summary { flex: 1; min-width: 0; color: var(--oa-text-secondary); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.repo-commit-list__meta { display: flex; flex-direction: column; align-items: flex-end; gap: 1px; flex: 0 0 auto; }
+.repo-commit-list__meta small { color: var(--oa-text-muted); font-size: 8px; }
+
+.repo-card__activity-empty { color: var(--oa-text-muted); font-size: 10px; }
+
+.repo-insights__provenance {
+  display: flex;
+  align-items: flex-start;
+  gap: 9px;
+  margin: 4px 0 16px;
+  padding: 12px 14px;
+  border-radius: var(--oa-radius-md);
+  background: var(--oa-bg-subtle);
+  color: var(--oa-text-muted);
+  font-size: 9px;
+  line-height: 1.5;
+}
+
+@media (max-width: 640px) {
+  .repo-card__meta { grid-template-columns: 1fr 1fr; }
+  .repo-commit-list__summary { white-space: normal; }
+  .repo-card__header { flex-direction: column; align-items: flex-start; }
+}

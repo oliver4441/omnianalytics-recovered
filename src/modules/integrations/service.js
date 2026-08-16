@@ -397,3 +397,33 @@ export const getTimelineFilterOptions = (dataset) => {
     projects: sortedOptions(projects),
   };
 };
+
+// Derive a repository-focused view from the attributed integration dataset.
+// Each repository is paired with its owning account and the commit events
+// recorded against it. This only reflects imported repository metadata, never
+// live provider state, so callers must keep connection actions clearly preview.
+export const getRepositoryInsights = (dataset) => {
+  const accountsById = new Map(dataset.accounts.map((account) => [account.id, account]));
+  const eventsByRepository = new Map();
+  dataset.events.forEach((event) => {
+    if (!event.resourceId) return;
+    const bucket = eventsByRepository.get(event.resourceId) || [];
+    bucket.push(event);
+    eventsByRepository.set(event.resourceId, bucket);
+  });
+
+  const repositories = dataset.resources
+    .filter((resource) => resource.type === 'repository')
+    .map((repository) => {
+      const account = repository.accountId ? accountsById.get(repository.accountId) : null;
+      const events = (eventsByRepository.get(repository.id) || []).sort(
+        (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime(),
+      );
+      return { repository, account, events };
+    });
+
+  const providers = [...new Set(repositories.map((entry) => entry.repository.provider))].sort();
+  const totalCommits = repositories.reduce((total, entry) => total + entry.events.length, 0);
+
+  return { repositories, providers, totalCommits };
+};
