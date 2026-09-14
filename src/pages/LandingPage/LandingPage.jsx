@@ -13,6 +13,7 @@ const lifecycle = [
   { label: 'Review', icon: 'pullRequest' },
   { label: 'Ship', icon: 'rocket' },
   { label: 'Operate', icon: 'chart' },
+  { label: 'Improve', icon: 'refresh' },
 ];
 
 export default function LandingPage({ initialTab = 'login' }) {
@@ -61,6 +62,9 @@ export default function LandingPage({ initialTab = 'login' }) {
   const switchTab = (tab) => {
     setActiveTab(tab);
     setError('');
+    // Keep auth routes deep-linkable: /login and /signup stay in sync with
+    // the active tab (both render this page via initialTab).
+    navigate(tab === 'signup' ? '/signup' : '/login');
   };
 
   return (

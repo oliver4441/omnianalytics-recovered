@@ -294,8 +294,10 @@ export function initializeSecurity() {
     });
   });
 
-  // Monitor for suspicious activity
+  // Monitor for suspicious activity (hook reserved for future implementation)
   setInterval(() => {
-    monitorSecurity();
+    if (typeof window.monitorSecurity === 'function') {
+      window.monitorSecurity();
+    }
   }, 30000); // Check every 30 seconds
 }
