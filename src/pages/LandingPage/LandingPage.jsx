@@ -1,9 +1,10 @@
 import { useState } from 'react';
 import { useDispatch } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
-import { signInWithEmail, signUpWithEmail } from '../../services/authService';
+import { formatAuthError, signInWithEmail, signInWithGitHub, signUpWithEmail } from '../../services/authService';
 import { setUser } from '../../store/slices/authSlice';
 import BrandMark from '../../components/BrandMark';
+import GitHubMark from '../../components/GitHubMark';
 import Icon from '../../components/Icon';
 import './LandingPage.css';
 
@@ -16,6 +17,7 @@ const lifecycle = [
   { label: 'Improve', icon: 'refresh' },
 ];
 
+
 export default function LandingPage({ initialTab = 'login' }) {
   const [activeTab, setActiveTab] = useState(initialTab);
   const [showPassword, setShowPassword] = useState(false);
@@ -27,6 +29,7 @@ export default function LandingPage({ initialTab = 'login' }) {
   });
   const [error, setError] = useState('');
   const [loading, setLoading] = useState(false);
+  const [githubLoading, setGithubLoading] = useState(false);
   const dispatch = useDispatch();
   const navigate = useNavigate();
 
@@ -52,10 +55,23 @@ export default function LandingPage({ initialTab = 'login' }) {
       }
       navigate('/dashboard');
     } catch (submitError) {
-      const message = submitError.message || 'Authentication failed. Please try again.';
-      setError(message.replace('Firebase: ', '').replace(/\s*\(auth\/[\w-]+\)\.?/, ''));
+      setError(formatAuthError(submitError));
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleGitHubSignIn = async () => {
+    setGithubLoading(true);
+    setError('');
+    try {
+      const user = await signInWithGitHub();
+      dispatch(setUser({ uid: user.uid, email: user.email, displayName: user.displayName || '' }));
+      navigate('/dashboard');
+    } catch (githubError) {
+      setError(formatAuthError(githubError));
+    } finally {
+      setGithubLoading(false);
     }
   };
 
@@ -124,6 +140,13 @@ export default function LandingPage({ initialTab = 'login' }) {
             <button aria-selected={activeTab === 'signup'} className={activeTab === 'signup' ? 'is-active' : ''} onClick={() => switchTab('signup')} role="tab">Create account</button>
           </div>
 
+          <button className="landing-oauth" disabled={githubLoading || loading} onClick={handleGitHubSignIn} type="button">
+            <GitHubMark />
+            <span>{githubLoading ? 'Connecting to GitHub…' : activeTab === 'login' ? 'Sign in with GitHub' : 'Create account with GitHub'}</span>
+          </button>
+
+          <div className="landing-oauth__divider" aria-hidden="true"><span>or continue with email</span></div>
+
           <form className="landing-auth-form" onSubmit={handleSubmit}>
             {activeTab === 'signup' && (
               <label>
@@ -151,7 +174,7 @@ export default function LandingPage({ initialTab = 'login' }) {
 
             {error && <div className="landing-auth-error" role="alert"><Icon name="issue" size={16} /><span>{error}</span></div>}
 
-            <button className="landing-submit" disabled={loading} type="submit">
+            <button className="landing-submit" disabled={loading || githubLoading} type="submit">
               {loading ? <><span className="landing-submit__spinner" /> Please wait…</> : <>{activeTab === 'login' ? 'Sign in to workspace' : 'Create account'} <Icon name="arrowRight" size={16} /></>}
             </button>
           </form>

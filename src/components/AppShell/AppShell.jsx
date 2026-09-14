@@ -28,10 +28,10 @@ const navigation = [
   {
     label: 'Integrations',
     items: [
-      { label: 'Integration overview', shortLabel: 'Overview', icon: 'overview', to: '/integrations', end: true, flag: 'integrationExplorer' },
+      { label: 'Integration overview', icon: 'overview', to: '/integrations', end: true, flag: 'integrationExplorer' },
       { label: 'Relationship graph', shortLabel: 'Graph', icon: 'graph', to: '/integrations/graph', flag: 'integrationExplorer' },
       { label: 'Provider accounts', shortLabel: 'Accounts', icon: 'users', to: '/integrations/accounts', flag: 'integrationExplorer' },
-      { label: 'Connected repositories', shortLabel: 'Repositories', icon: 'branch', to: '/integrations/repositories', flag: 'integrationExplorer' },
+      { label: 'Connected repositories', icon: 'branch', to: '/integrations/repositories', flag: 'integrationExplorer' },
       { label: 'Deployments', icon: 'rocket', to: '/integrations/deployments', flag: 'integrationExplorer' },
       { label: 'Connections', icon: 'link', to: '/integrations/connections', flag: 'integrationExplorer' },
       { label: 'Integration activity', shortLabel: 'Activity', icon: 'activity', to: '/integrations/activity', flag: 'integrationExplorer' },
@@ -59,13 +59,18 @@ const getPageTitle = (pathname) => {
   return 'Workspace';
 };
 
+const FEATURE_BADGE_HINTS = {
+  [FEATURE_STATES.PREVIEW]: 'Preview — usable now, still evolving',
+  [FEATURE_STATES.INTERNAL]: 'Soon — in development, not available yet',
+};
+
 function FeatureLabel({ flag }) {
   if (!flag) return null;
   const state = getFeatureState(flag);
   if (state === FEATURE_STATES.ENABLED) return null;
 
   return (
-    <span className={`app-nav__feature app-nav__feature--${state}`}>
+    <span className={`app-nav__feature app-nav__feature--${state}`} title={FEATURE_BADGE_HINTS[state]}>
       {state === FEATURE_STATES.INTERNAL ? 'Soon' : state}
     </span>
   );
@@ -260,11 +265,11 @@ export default function AppShell({ user }) {
         </nav>
 
         <div className="app-sidebar__footer">
-          <div className="environment-chip">
+          <div className="environment-chip" title="PREVIEW = usable now · SOON = in development">
             <span className="environment-chip__dot" />
             <span className="environment-chip__copy">
               <strong>Preview workspace</strong>
-              <small>Module flags active</small>
+              <small>PREVIEW · live now — SOON · in progress</small>
             </span>
           </div>
           <NavLink className="app-nav__item" to="/settings" title="Settings">

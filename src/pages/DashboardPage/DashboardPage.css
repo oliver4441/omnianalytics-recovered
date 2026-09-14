@@ -220,6 +220,14 @@
 }
 
 .overview-metric__body strong.is-empty { color: var(--oa-text-muted); }
+.overview-metric__skeleton {
+  height: 26px;
+  margin-top: 8px;
+  border-radius: 6px;
+  background: linear-gradient(90deg, var(--oa-bg-subtle), var(--oa-surface-hover), var(--oa-bg-subtle));
+  background-size: 200% 100%;
+  animation: shimmer 1.5s infinite;
+}
 
 .overview-metric__detail {
   margin-top: 5px;

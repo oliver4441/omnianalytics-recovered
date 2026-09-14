@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { useNavigate } from 'react-router-dom';
 import { getAllUserProjects } from '../../services/projectService';
@@ -28,15 +28,22 @@ const getProjectProgress = (project) => {
 };
 
 function MetricCard({ icon, label, value, detail, tone = 'brand', action, onClick }) {
+  // An undefined value signals the bounded loading state (see the stalled
+  // timeout below); the skeleton renders instead of a permanent ellipsis.
+  const loading = value === undefined;
   return (
-    <button className="overview-metric" onClick={onClick} type="button">
+    <button aria-busy={loading || undefined} className="overview-metric" onClick={onClick} type="button">
       <span className={`overview-metric__icon overview-metric__icon--${tone}`}>
         <Icon name={icon} size={18} />
       </span>
       <span className="overview-metric__body">
         <span className="overview-metric__label">{label}</span>
-        <strong className={value === '—' ? 'is-empty' : ''}>{value}</strong>
-        <span className="overview-metric__detail">{detail}</span>
+        {loading ? (
+          <span aria-hidden="true" className="overview-metric__skeleton" />
+        ) : (
+          <strong className={value === '—' ? 'is-empty' : ''}>{value}</strong>
+        )}
+        {!loading && <span className="overview-metric__detail">{detail}</span>}
       </span>
       <span className="overview-metric__action">{action}<Icon name="chevronRight" size={14} /></span>
     </button>
@@ -75,6 +82,7 @@ export default function DashboardPage({ user }) {
   const navigate = useNavigate();
   const dispatch = useDispatch();
   const { projects, loading, error } = useSelector((state) => state.projects);
+  const [stalled, setStalled] = useState(false);
 
   const fetchProjects = useCallback(async () => {
     if (!user?.uid) return;
@@ -98,6 +106,18 @@ export default function DashboardPage({ user }) {
   useEffect(() => {
     fetchProjects();
   }, [fetchProjects]);
+
+  // Bound the skeleton state: if project data has not resolved within a few
+  // seconds (slow network, unavailable backend), settle on the true value so
+  // the cards never sit on an unresolvable ellipsis.
+  useEffect(() => {
+    if (!loading) {
+      setStalled(false);
+      return undefined;
+    }
+    const timer = window.setTimeout(() => setStalled(true), 6000);
+    return () => window.clearTimeout(timer);
+  }, [loading]);
 
   const stats = useMemo(() => {
     const active = projects.filter((project) => project.status !== 'completed').length;
@@ -171,7 +191,7 @@ export default function DashboardPage({ user }) {
             label="Active projects"
             onClick={() => navigate('/projects')}
             tone="brand"
-            value={loading ? '…' : stats.active}
+            value={loading && !stalled ? undefined : stats.active}
           />
           <MetricCard
             action="Open"
@@ -180,7 +200,7 @@ export default function DashboardPage({ user }) {
             label="Tracked tasks"
             onClick={() => navigate('/projects')}
             tone="blue"
-            value={loading ? '…' : stats.tasks ?? '—'}
+            value={loading && !stalled ? undefined : (stats.tasks ?? '—')}
           />
           <MetricCard
             action="Set up"
