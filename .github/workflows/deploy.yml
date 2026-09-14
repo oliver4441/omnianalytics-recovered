@@ -31,7 +31,5 @@ jobs:
         run: |
           npm i -g vercel
           vercel pull --yes --environment=${{ github.ref == 'refs/heads/main' && 'production' || 'preview' }} --token=$VERCEL_TOKEN
-          vercel build --yes --token=$VERCEL_TOKEN
-          vercel deploy --prebuilt --yes \
-            ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} \
-            --token=$VERCEL_TOKEN
+          vercel build --yes ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=$VERCEL_TOKEN
+          vercel deploy --prebuilt --yes ${{ github.ref == 'refs/heads/main' && '--prod' || '' }} --token=$VERCEL_TOKEN
