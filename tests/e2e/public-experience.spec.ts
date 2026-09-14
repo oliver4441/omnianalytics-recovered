@@ -19,7 +19,7 @@ test.describe('public OmniAnalytics experience', () => {
     await expect(page).toHaveURL(/\/signup$/);
     await expect(page.getByRole('heading', { name: 'Create your workspace' })).toBeVisible();
     await expect(page.getByPlaceholder('Alex Morgan')).toBeVisible();
-    await expect(page.getByRole('button', { name: 'Create account' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Create account', exact: true })).toBeVisible();
   });
 
   test('redirects protected routes to sign in when no authenticated session exists', async ({ page }) => {
