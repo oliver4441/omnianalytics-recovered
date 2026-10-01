@@ -1,0 +1,13 @@
+# Fairytale / OmniAnalytics
+
+OmniAnalytics is a unified engineering workspace for planning, building, shipping, and operating software.
+
+Canonical site: https://fairytale.omixsystems.store/
+
+## Public routes
+- / — Public landing page
+- /login — Authentication entry point
+- /signup — Account registration entry point
+
+## Private application
+Dashboard, projects, project details, issues, repositories, CI/CD, releases, integrations, analytics, security, docs, settings, and profile routes are protected by authentication and are intentionally excluded from the public sitemap and crawler content.
