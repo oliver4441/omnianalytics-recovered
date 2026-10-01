@@ -1,0 +1,11 @@
+# Fairytale / OmniAnalytics
+
+> OmniAnalytics is a unified engineering workspace for planning, building, shipping, and operating software.
+
+## Public pages
+- https://fairytale.omixsystems.store/
+- https://fairytale.omixsystems.store/login
+- https://fairytale.omixsystems.store/signup
+
+## Crawler guidance
+The authenticated dashboard, project data, settings, profiles, and other protected application routes are not listed because they require authentication.
